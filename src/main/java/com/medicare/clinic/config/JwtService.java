@@ -16,8 +16,12 @@ import java.util.function.Function;
 @Component
 public class JwtService {
 
-    private static final Key SIGNING_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private static final String SECRET_KEY = "ThisIsASuperSecretKeyForJwtSignatureGenerationThatIsLongEnough"; // Static key for persistent sessions
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
+
+    private Key getSigningKey() {
+        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+    }
 
     public String generateToken(UserDetails userDetails) {
         return generateToken(new HashMap<>(), userDetails);
@@ -29,7 +33,7 @@ public class JwtService {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(SIGNING_KEY, SignatureAlgorithm.HS256)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -49,7 +53,7 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(SIGNING_KEY)
+                .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

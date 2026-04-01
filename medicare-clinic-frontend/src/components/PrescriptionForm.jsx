@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
 import '../styles/PrescriptionForm.css';
 
+/**
+ * PrescriptionForm — shared between Pharmacy and Doctor dashboards.
+ *
+ * Props:
+ *  - onSubmit(formData)   : called with the form data on valid submit
+ *  - initialData          : pre-fill for edit mode
+ *  - onCancel()           : called when Cancel is clicked
+ *  - medicines            : [{ id, name, dosage }]
+ *  - patients             : [{ id, name }]
+ *  - lockedDoctorId       : if provided, doctor ID field is pre-filled and locked (read-only)
+ */
 export default function PrescriptionForm({
     onSubmit,
     initialData,
     onCancel,
     medicines = [],
-    patients = []
+    patients = [],
+    lockedDoctorId = ''
 }) {
     const [formData, setFormData] = useState({
         patientId: '',
-        doctorId: '',
+        doctorId: lockedDoctorId || '',
         medicineId: '',
         dosage: '',
         duration: '',
@@ -22,46 +34,37 @@ export default function PrescriptionForm({
 
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            setFormData({ ...initialData, doctorId: lockedDoctorId || initialData.doctorId || '' });
+        } else {
+            setFormData(prev => ({ ...prev, doctorId: lockedDoctorId || prev.doctorId }));
         }
-    }, [initialData]);
+    }, [initialData, lockedDoctorId]);
 
     const validateForm = () => {
         const newErrors = {};
-
-        if (!formData.patientId) newErrors.patientId = 'Patient is required';
-        if (!formData.doctorId) newErrors.doctorId = 'Doctor ID is required';
-        if (!formData.medicineId) newErrors.medicineId = 'Medicine is required';
-        if (!formData.dosage.trim()) newErrors.dosage = 'Dosage is required';
-        if (!formData.duration.trim()) newErrors.duration = 'Duration is required';
-
+        if (!formData.patientId)        newErrors.patientId  = 'Patient is required';
+        if (!formData.doctorId)         newErrors.doctorId   = 'Doctor ID is required';
+        if (!formData.medicineId)       newErrors.medicineId = 'Medicine is required';
+        if (!formData.dosage?.trim())   newErrors.dosage     = 'Dosage is required';
+        if (!formData.duration?.trim()) newErrors.duration   = 'Duration is required';
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: value
-        }));
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
+        setFormData(prev => ({ ...prev, [name]: value }));
+        if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-
         if (validateForm()) {
             onSubmit(formData);
             if (!initialData) {
                 setFormData({
                     patientId: '',
-                    doctorId: '',
+                    doctorId: lockedDoctorId || '',
                     medicineId: '',
                     dosage: '',
                     duration: '',
@@ -74,6 +77,8 @@ export default function PrescriptionForm({
 
     return (
         <form onSubmit={handleSubmit} className="prescription-form">
+
+            {/* ── Row 1: Patient | Doctor ── */}
             <div className="form-row">
                 <div className="form-group">
                     <label htmlFor="patientId">Select Patient *</label>
@@ -100,15 +105,29 @@ export default function PrescriptionForm({
                         type="text"
                         id="doctorId"
                         name="doctorId"
-                        placeholder="Enter doctor ID (e.g., DOC001)"
+                        placeholder="e.g., DOC001"
                         value={formData.doctorId}
                         onChange={handleChange}
+                        readOnly={!!lockedDoctorId}
+                        style={lockedDoctorId ? {
+                            background: 'var(--primary-soft)',
+                            color: 'var(--primary)',
+                            fontWeight: '700',
+                            cursor: 'not-allowed',
+                            border: '1.5px solid var(--primary)'
+                        } : {}}
                         className={errors.doctorId ? 'input-error' : ''}
                     />
+                    {lockedDoctorId && (
+                        <span style={{ fontSize: '0.75rem', color: 'var(--primary)', marginTop: '0.3rem', display: 'block' }}>
+                            🔒 Auto-filled from your login session
+                        </span>
+                    )}
                     {errors.doctorId && <span className="error-text">{errors.doctorId}</span>}
                 </div>
             </div>
 
+            {/* ── Row 2: Medicine | Dosage ── */}
             <div className="form-row">
                 <div className="form-group">
                     <label htmlFor="medicineId">Select Medicine *</label>
@@ -122,7 +141,7 @@ export default function PrescriptionForm({
                         <option value="">-- Choose Medicine --</option>
                         {medicines.map(medicine => (
                             <option key={medicine.id} value={medicine.id}>
-                                {medicine.name} ({medicine.dosage})
+                                {medicine.name}{medicine.dosage ? ` (${medicine.dosage})` : ''}
                             </option>
                         ))}
                     </select>
@@ -144,6 +163,7 @@ export default function PrescriptionForm({
                 </div>
             </div>
 
+            {/* ── Row 3: Duration | Refills ── */}
             <div className="form-row">
                 <div className="form-group">
                     <label htmlFor="duration">Duration *</label>
@@ -160,7 +180,7 @@ export default function PrescriptionForm({
                 </div>
 
                 <div className="form-group">
-                    <label htmlFor="refills">Number of Refills</label>
+                    <label htmlFor="refills">Refills</label>
                     <input
                         type="number"
                         id="refills"
@@ -174,6 +194,7 @@ export default function PrescriptionForm({
                 </div>
             </div>
 
+            {/* ── Instructions ── */}
             <div className="form-group">
                 <label htmlFor="instructions">Special Instructions</label>
                 <textarea
@@ -186,9 +207,10 @@ export default function PrescriptionForm({
                 />
             </div>
 
+            {/* ── Actions ── */}
             <div className="form-actions">
                 <button type="submit" className="btn-submit">
-                    {initialData ? 'Update Prescription' : 'Create Prescription'}
+                    {initialData ? '💾 Update Prescription' : '✅ Create Prescription'}
                 </button>
                 {onCancel && (
                     <button type="button" onClick={onCancel} className="btn-cancel">

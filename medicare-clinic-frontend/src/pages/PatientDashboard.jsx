@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import API from '../services/api';
 
 export default function PatientDashboard() {
     const navigate = useNavigate();
@@ -9,17 +10,18 @@ export default function PatientDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [toastMsg, setToastMsg] = useState(null);
     const [userProfile, setUserProfile] = useState({
-        name: 'Patient Rizquan',
-        id: 'PAT001',
+        name: localStorage.getItem('fullName') || 'Unknown Patient',
+        id: localStorage.getItem('userId') || 'PAT001',
         age: 24,
-        email: 'rizquan@medicare.com',
-        phone: '+94 77 123 4567',
-        address: 'No 123, Main Street, Colombo',
+        email: 'Loading...',
+        phone: 'Loading...',
+        address: 'Loading...',
         bloodGroup: 'O+',
-        allergies: 'Penicillin, Dust'
+        allergies: 'None'
     });
 
-    const API_BASE_URL = 'http://localhost:8080/api';
+    // userId stored by Login.jsx (e.g. PAT001)
+    const patientUserId = localStorage.getItem('userId') || '';
 
     useEffect(() => {
         fetchPrescriptions();
@@ -33,13 +35,12 @@ export default function PatientDashboard() {
     const fetchPrescriptions = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/prescriptions`);
-            if (!response.ok) throw new Error(`Server error ${response.status}`);
-            const data = await response.json();
-            setPrescriptions(data.filter(p => !p.patientId || p.patientId === 'PAT001'));
+            // Use the patient-specific endpoint with JWT auth
+            const response = await API.get(`/prescriptions/patient/${patientUserId}`);
+            setPrescriptions(response.data);
             setError(null);
         } catch (err) {
-            setError('⚠️ Could not connect to the backend server. (' + err.message + ')');
+            setError('⚠️ Could not connect to the backend server. (' + (err.response?.data?.message || err.message) + ')');
         } finally {
             setLoading(false);
         }
@@ -181,7 +182,7 @@ export default function PatientDashboard() {
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                     <div className="stat-icon" style={{ width: '40px', height: '40px', fontSize: '1rem' }}>💊</div>
                                                     <div>
-                                                        <div style={{ fontWeight: '700' }}>{p.medicineId}</div>
+                                                        <div style={{ fontWeight: '700' }}>{p.medicineName || p.medicineId || 'Unknown Medicine'}</div>
                                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(p.createdAt)} • {p.dosage}</div>
                                                     </div>
                                                 </div>
@@ -228,25 +229,27 @@ export default function PatientDashboard() {
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
-                                {prescriptions.map(script => {
-                                    const badge = getStatusBadge(script.status);
+                                {prescriptions.map(rx => {
+                                    const badge = getStatusBadge(rx.status);
                                     return (
-                                        <div key={script.id} className="soft-card" style={{ padding: '1.5rem', borderTop: `5px solid ${badge.label === 'Pending' ? 'var(--danger)' : 'var(--success)'}` }}>
+                                        <div key={rx.id} className="soft-card" style={{ padding: '1.5rem', borderTop: `5px solid ${badge.label === 'Pending' ? 'var(--danger)' : 'var(--success)'}` }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
-                                                <div className="badge badge-info">ID: #{script.id}</div>
+                                                <div className="badge badge-info">ID: #{rx.id}</div>
                                                 <span className={`badge ${badge.cls}`}>{badge.label}</span>
                                             </div>
-                                            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>{script.medicineId}</h3>
+                                            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>{rx.medicineName || rx.medicineId || 'Unknown Medicine'}</h3>
                                             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Dosage:</span> <strong style={{ color: 'var(--text-main)' }}>{script.dosage}</strong></div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Duration:</span> <strong style={{ color: 'var(--text-main)' }}>{script.duration}</strong></div>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Doctor:</span> <strong style={{ color: 'var(--text-main)' }}>{script.doctorId || 'Hospital Staff'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Dosage:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.dosage || '—'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Duration:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.duration || '—'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Doctor:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.doctorName || rx.doctorId || 'Hospital Staff'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Prescription ID:</span> <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>#{rx.id}</strong></div>
                                             </div>
-                                            {script.instructions && (
+                                            {rx.instructions && (
                                                 <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: 'var(--primary-soft)', borderRadius: '12px', fontSize: '0.8rem', fontStyle: 'italic' }}>
-                                                    Note: {script.instructions}
+                                                    Note: {rx.instructions}
                                                 </div>
                                             )}
+                                            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>🗓 {formatDate(rx.createdAt)}</div>
                                         </div>
                                     );
                                 })}

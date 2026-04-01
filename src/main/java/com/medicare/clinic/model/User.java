@@ -16,23 +16,26 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "username", unique = true, nullable = false)
     private String username;
 
-    @Column(unique = true, nullable = false)
+    // The business-facing ID: PAT001, DOC001, etc.
+    @Column(name = "userId", unique = true, nullable = false)
     private String userId;
 
-    @Column(nullable = false)
+    @Column(name = "password", nullable = false)
     private String password;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "role", nullable = false)
     private Role role;
 
+    @Column(name = "fullName")
     private String fullName;
 
+    @Column(name = "contactNumber")
     private String contactNumber;
 }
