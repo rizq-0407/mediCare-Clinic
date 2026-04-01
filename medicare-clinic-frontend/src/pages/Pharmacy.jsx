@@ -10,6 +10,7 @@ export default function Pharmacy() {
     const navigate = useNavigate();
     const [medicines, setMedicines] = useState([]);
     const [prescriptions, setPrescriptions] = useState([]);
+    const [patients, setPatients] = useState([]);
     const [showMedicineForm, setShowMedicineForm] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [editingMedicine, setEditingMedicine] = useState(null);
@@ -19,11 +20,10 @@ export default function Pharmacy() {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [toastMsg, setToastMsg] = useState(null);
 
-    const API_BASE_URL = 'http://localhost:8080/api';
-
     useEffect(() => {
         fetchMedicines();
         fetchPrescriptions();
+        fetchPatients();
     }, []);
 
     const showToast = (msg, type = 'success') => {
@@ -35,10 +35,17 @@ export default function Pharmacy() {
         try {
             setLoading(true);
             const response = await API.get('/medicines');
-            setMedicines(response.data);
+            setMedicines(response.data || []);
             setError(null);
         } catch (err) {
-            setError('⚠️ Could not connect to the backend server. (' + (err.response?.data?.message || err.message) + ')');
+            const msg = err.response?.data?.message || err.message;
+            const isNetworkError = !err.response;
+            setError(
+                isNetworkError
+                    ? '🔌 Backend is offline — make sure Spring Boot is running on port 8080.'
+                    : `⚠️ Server error: ${msg}`
+            );
+            setMedicines([]);
         } finally {
             setLoading(false);
         }
@@ -47,9 +54,18 @@ export default function Pharmacy() {
     const fetchPrescriptions = async () => {
         try {
             const response = await API.get('/prescriptions');
-            setPrescriptions(response.data);
+            setPrescriptions(response.data || []);
         } catch (err) {
-            console.error('Error fetching prescriptions:', err);
+            console.error('Error fetching prescriptions:', err.message);
+        }
+    };
+
+    const fetchPatients = async () => {
+        try {
+            const response = await API.get('/users/patients');
+            setPatients(response.data || []);
+        } catch (err) {
+            console.error('Error fetching patients:', err.message);
         }
     };
 
@@ -164,17 +180,9 @@ export default function Pharmacy() {
         return { label: 'Dispensed', cls: 'badge-completed' };
     };
 
-    const mockPatients = [
-        { id: 'PAT001', name: 'Patient Rizquan' },
-        { id: 'PAT002', name: 'Patient John' }
-    ];
 
     return (
         <div className="ph-layout">
-            <div className="bg-decor-container">
-                <div className="float-circle"></div>
-                <div className="float-symbol">☤</div>
-            </div>
             <aside className="ph-sidebar">
                 <div className="sidebar-brand">
                     <span className="brand-icon">💊</span>
@@ -185,31 +193,16 @@ export default function Pharmacy() {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <button
-                        id="tab-prescriptions"
-                        className={`nav-item ${activeTab === 'prescriptions' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('prescriptions')}
-                    >
-                        <span className="nav-icon">📋</span>
-                        <span>Prescriptions</span>
+                    <button className={`nav-item ${activeTab === 'prescriptions' ? 'active' : ''}`} onClick={() => setActiveTab('prescriptions')}>
+                        <span className="nav-icon">📋</span> Queue
                         {pendingCount > 0 && <span className="nav-badge nav-badge-warn">{pendingCount}</span>}
                     </button>
-                    <button
-                        id="tab-medicines"
-                        className={`nav-item ${activeTab === 'medicines' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('medicines')}
-                    >
-                        <span className="nav-icon">💊</span>
-                        <span>Medicine Stock</span>
-                        {lowStockCount > 0 && <span className="nav-badge nav-badge-warn">{lowStockCount}</span>}
+                    <button className={`nav-item ${activeTab === 'medicines' ? 'active' : ''}`} onClick={() => setActiveTab('medicines')}>
+                        <span className="nav-icon">💊</span> Inventory
+                        {lowStockCount > 0 && <span className="nav-badge nav-badge-warn">{lowStockCount} low</span>}
                     </button>
-                    <button
-                        id="tab-new-prescription"
-                        className={`nav-item ${activeTab === 'new-prescription' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('new-prescription'); setShowPrescriptionForm(true); }}
-                    >
-                        <span className="nav-icon">✍️</span>
-                        <span>New Prescription</span>
+                    <button className={`nav-item ${activeTab === 'new-prescription' ? 'active' : ''}`} onClick={() => { setActiveTab('new-prescription'); setShowPrescriptionForm(true); }}>
+                        <span className="nav-icon">✍️</span> New Script
                     </button>
                     <button
                         id="tab-ai-agent"
@@ -240,14 +233,8 @@ export default function Pharmacy() {
             <main className="ph-main">
                 <header className="ph-topbar">
                     <div>
-                        <h1 className="topbar-title">
-                            {activeTab === 'prescriptions' && 'Prescription Dashboard'}
-                            {activeTab === 'medicines' && 'Medicine Stock'}
-                            {activeTab === 'new-prescription' && 'Create Prescription'}
-                        </h1>
-                        <p className="topbar-subtitle">
-                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
+                        <h1 className="topbar-title">Pharmacy Dashboard</h1>
+                        <p className="topbar-subtitle">Manage medication queue and inventory</p>
                     </div>
                     <button className="topbar-logout-btn" onClick={handleLogout}>
                         <span>⏻</span> Logout
@@ -269,56 +256,52 @@ export default function Pharmacy() {
 
                 {activeTab === 'prescriptions' && (
                     <div className="tab-content">
-                        {/* Stats row */}
-                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        <div className="stats-grid">
                             <div className="stat-card stat-pending">
                                 <div className="stat-icon">⏳</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{pendingCount}</span>
-                                    <span className="stat-label">Pending</span>
+                                    <div className="stat-label">Pending</div>
+                                    <div className="stat-value">{pendingCount}</div>
                                 </div>
                             </div>
                             <div className="stat-card stat-completed">
-                                <div className="stat-icon">💊</div>
+                                <div className="stat-icon">✅</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{dispensedCount}</span>
-                                    <span className="stat-label">Dispensed</span>
+                                    <div className="stat-label">Dispensed</div>
+                                    <div className="stat-value">{dispensedCount}</div>
                                 </div>
                             </div>
                             <div className="stat-card stat-total">
-                                <div className="stat-icon">📊</div>
+                                <div className="stat-icon">📦</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{prescriptions.length}</span>
-                                    <span className="stat-label">Total</span>
+                                    <div className="stat-label">Total Scripts</div>
+                                    <div className="stat-value">{prescriptions.length}</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Filter tabs */}
                         <div className="filter-bar">
-                            <span className="filter-label">Filter by Status:</span>
-                            {['ALL', 'Pending', 'Dispensed'].map(f => (
-                                <button
-                                    key={f}
-                                    className={`filter-btn ${statusFilter === f ? 'filter-active' : ''}`}
-                                    onClick={() => setStatusFilter(f)}
-                                >
-                                    {f}
-                                </button>
-                            ))}
+                            <span className="filter-label">Filter:</span>
+                            <button
+                                className={`filter-btn ${statusFilter === 'ALL' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('ALL')}
+                            >All Scripts</button>
+                            <button
+                                className={`filter-btn ${statusFilter === 'Pending' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('Pending')}
+                            >Pending Only</button>
+                            <button
+                                className={`filter-btn ${statusFilter === 'Dispensed' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('Dispensed')}
+                            >Dispensed Only</button>
                         </div>
 
-                        {/* Prescriptions list */}
                         <div className="prescriptions-grid">
                             {filteredPrescriptions.length === 0 ? (
                                 <div className="empty-state">
                                     <div className="empty-icon">📭</div>
                                     <h3>No prescriptions found</h3>
-                                    <p>
-                                        {statusFilter !== 'ALL'
-                                            ? `No ${statusFilter.toLowerCase()} prescriptions at this time.`
-                                            : 'No prescriptions have been sent yet.'}
-                                    </p>
+                                    <p>{statusFilter !== 'ALL' ? `No ${statusFilter.toLowerCase()} prescriptions match your filter.` : 'The pharmacy queue is currently empty.'}</p>
                                 </div>
                             ) : (
                                 filteredPrescriptions.map(script => {
@@ -330,7 +313,7 @@ export default function Pharmacy() {
                                         >
                                             <div className="pcard-header">
                                                 <div className="pcard-id">
-                                                    <span className="pcard-icon">📄</span>
+                                                    <span className="pcard-icon">💊</span>
                                                     <span>#{script.id}</span>
                                                 </div>
                                                 <span className={`status-badge ${badge.cls}`}>{badge.label}</span>
@@ -455,7 +438,7 @@ export default function Pharmacy() {
                             <PrescriptionForm
                                 onSubmit={handleAddPrescription}
                                 medicines={medicines}
-                                patients={mockPatients}
+                                patients={patients}
                                 onCancel={() => setActiveTab('prescriptions')}
                             />
                         </div>

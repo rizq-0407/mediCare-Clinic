@@ -59,17 +59,58 @@ public class PrescriptionService {
                     .ifPresent(m -> dto.setMedicineName(m.getName()));
             }
 
-            // Lookup Patient Name
+            // Lookup Patient Name by userId (e.g., PAT001)
             if (p.getPatientId() != null) {
-                userRepository.findByUsername(p.getPatientId())
-                    .ifPresent(u -> dto.setPatientName(u.getFullName()));
+                userRepository.findByUserId(p.getPatientId())
+                    .ifPresent(u -> dto.setPatientName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
             }
 
-            // Lookup Doctor Name
+            // Lookup Doctor Name by userId (e.g., DOC001)
             if (p.getDoctorId() != null) {
-                 userRepository.findByUsername(p.getDoctorId())
-                    .ifPresent(u -> dto.setDoctorName(u.getFullName()));
+                userRepository.findByUserId(p.getDoctorId())
+                    .ifPresent(u -> dto.setDoctorName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
             }
+
+            dtos.add(dto);
+        }
+        return dtos;
+    }
+
+    public List<PrescriptionDTO> getPrescriptionsByPatientId(String patientId) {
+        List<Prescription> prescriptions = prescriptionRepository.findByPatientId(patientId);
+        List<PrescriptionDTO> dtos = new ArrayList<>();
+
+        for (Prescription p : prescriptions) {
+            List<PrescriptionItem> items = prescriptionItemRepository.findByPrescriptionId(p.getPrescriptionId());
+
+            PrescriptionDTO dto = new PrescriptionDTO();
+            dto.setId(p.getPrescriptionId());
+            dto.setPatientId(p.getPatientId());
+            dto.setDoctorId(p.getDoctorId());
+            dto.setInstructions(p.getNotes());
+            dto.setRefills(0);
+            dto.setStatus(p.getStatus() != null ? p.getStatus() : "Pending");
+            dto.setCreatedAt(p.getPrescriptionDate() != null
+                    ? p.getPrescriptionDate().format(DateTimeFormatter.ISO_LOCAL_DATE)
+                    : "");
+
+            if (!items.isEmpty()) {
+                PrescriptionItem firstItem = items.get(0);
+                dto.setMedicineId(firstItem.getMedicineId());
+                dto.setDosage(firstItem.getDosage());
+                dto.setDuration(firstItem.getDuration());
+
+                medicineRepository.findById(firstItem.getMedicineId())
+                    .ifPresent(m -> dto.setMedicineName(m.getName()));
+            }
+
+            if (p.getDoctorId() != null) {
+                userRepository.findByUserId(p.getDoctorId())
+                    .ifPresent(u -> dto.setDoctorName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
+            }
+
+            userRepository.findByUserId(patientId)
+                .ifPresent(u -> dto.setPatientName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
 
             dtos.add(dto);
         }
