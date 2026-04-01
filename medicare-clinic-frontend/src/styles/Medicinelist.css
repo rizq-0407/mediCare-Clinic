@@ -1,175 +1,170 @@
-/* Medicine List - Dark Theme */
+/* Medicine List - High-End Premium Theme */
 .medicine-list-container {
+    padding: 1rem 0;
     width: 100%;
-    overflow-x: auto;
 }
 
 .medicine-table {
     width: 100%;
-    border-collapse: collapse;
-    background: var(--bg-card);
-    border-radius: var(--radius-lg);
-    overflow: hidden;
-    border: 1px solid var(--border-color);
+    border-collapse: separate;
+    border-spacing: 0 1rem; /* Creates the "card" effect for rows */
 }
 
-.medicine-table thead {
-    background: rgba(59, 130, 246, 0.12);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.medicine-table th {
-    padding: 1rem 1.25rem;
+.medicine-table thead th {
+    padding: 1.2rem 1.5rem;
     text-align: left;
-    font-weight: 600;
-    font-size: 0.78rem;
-    color: var(--accent-blue-light);
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--text-secondary);
     text-transform: uppercase;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.08em;
+    border: none;
 }
 
 .medicine-table tbody tr {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-    transition: all 0.2s ease;
-}
-
-.medicine-table tbody tr:last-child {
-    border-bottom: none;
+    background: var(--bg-main);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    border: 1px solid var(--glass-border);
+    transition: var(--transition);
+    border-radius: var(--radius-lg);
 }
 
 .medicine-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.04);
-}
-
-.medicine-table tbody tr.row-expired {
-    background: rgba(239, 68, 68, 0.06);
+    transform: translateY(-4px) scale(1.005);
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.08);
+    background: #ffffff;
+    z-index: 10;
 }
 
 .medicine-table td {
-    padding: 0.85rem 1.25rem;
-    font-size: 0.88rem;
-    color: var(--text-primary);
+    padding: 1.5rem;
+    vertical-align: center;
+    border-top: 1px solid var(--glass-border);
+    border-bottom: 1px solid var(--glass-border);
 }
 
+.medicine-table td:first-child {
+    border-left: 1px solid var(--glass-border);
+    border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+}
+
+.medicine-table td:last-child {
+    border-right: 1px solid var(--glass-border);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+}
+
+/* Medicine Identity */
 .medicine-name {
-    font-weight: 600;
-    color: var(--accent-blue-light);
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 0.3rem;
+    display: block;
 }
 
+.medicine-manufacturer {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+/* Category Badge */
 .category-badge {
-    display: inline-block;
-    padding: 3px 10px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    padding: 0.5rem 1rem;
     border-radius: 12px;
-    font-size: 0.76rem;
-    font-weight: 600;
-    background: rgba(6, 182, 212, 0.12);
-    color: var(--accent-cyan);
-    border: 1px solid rgba(6, 182, 212, 0.25);
-    white-space: nowrap;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 1px solid var(--glass-border);
 }
 
+/* Stock Status */
 .stock-badge {
-    display: inline-block;
-    padding: 5px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-align: center;
-    min-width: 110px;
-    white-space: nowrap;
-}
-
-.stock-good {
-    background: rgba(16, 185, 129, 0.15);
-    color: var(--accent-green-light);
-    border: 1px solid rgba(16, 185, 129, 0.3);
-}
-
-.stock-low {
-    background: rgba(245, 158, 11, 0.15);
-    color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.3);
-}
-
-.stock-out {
-    background: rgba(239, 68, 68, 0.15);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.price {
-    font-weight: 600;
-    color: var(--accent-blue-light);
-}
-
-.expired {
-    color: #fca5a5;
-    font-weight: 600;
-}
-
-.expired-label {
-    display: inline-block;
-    background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-    padding: 2px 7px;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    margin-left: 5px;
-    border: 1px solid rgba(239, 68, 68, 0.3);
-}
-
-.actions {
     display: flex;
-    gap: 0.5rem;
+    flex-direction: column;
+    gap: 0.3rem;
 }
 
-.btn-edit,
-.btn-delete {
-    padding: 0.35rem 0.8rem;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 0.8rem;
+.status-indicator {
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    display: inline-block;
+    width: fit-content;
+}
+
+.stock-good .status-indicator { background: rgba(16, 185, 129, 0.1); color: var(--success); }
+.stock-low .status-indicator { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
+.stock-out .status-indicator { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
+
+.stock-count {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+/* Expiry & Price */
+.expiry-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.expiry-date {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.expiry-status {
+    font-size: 0.75rem;
     font-weight: 600;
-    font-family: 'Inter', sans-serif;
-    transition: all 0.2s ease;
 }
 
-.btn-edit {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--accent-blue-light);
-    border: 1px solid rgba(59, 130, 246, 0.25);
+.expired .expiry-date { color: var(--danger); }
+
+.price-tag {
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
 }
 
-.btn-edit:hover {
-    background: rgba(59, 130, 246, 0.28);
-    transform: translateY(-1px);
+.price-currency {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
 }
 
-.btn-delete {
-    background: rgba(239, 68, 68, 0.12);
-    color: #fca5a5;
-    border: 1px solid rgba(239, 68, 68, 0.25);
+/* Actions */
+.actions-cell {
+    display: flex;
+    gap: 0.8rem;
+    justify-content: flex-end;
 }
 
-.btn-delete:hover {
-    background: rgba(239, 68, 68, 0.25);
-    transform: translateY(-1px);
+.action-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--bg-main);
 }
 
-@media (max-width: 1024px) {
-    .medicine-table th,
-    .medicine-table td {
-        padding: 0.75rem 1rem;
-        font-size: 0.85rem;
-    }
-    .actions {
-        flex-direction: column;
-    }
-}
+.btn-edit { color: var(--primary); }
+.btn-edit:hover { background: var(--primary); color: white; box-shadow: 0 4px 12px rgba(14, 165, 233, 0.3); }
 
-@media (max-width: 768px) {
-    .medicine-table {
-        min-width: 700px;
-    }
+.btn-delete { color: var(--danger); }
+.btn-delete:hover { background: var(--danger); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+
+/* Responsive adjustments */
+@media (max-width: 1200px) {
+    .medicine-table { min-width: 1000px; }
 }
