@@ -3,9 +3,8 @@ import '../styles/MedicineList.css';
 export default function MedicineList({ medicines, onEdit, onDelete }) {
     const formatPrice = (price) => {
         return new Intl.NumberFormat('en-PK', {
-            style: 'currency',
-            currency: 'PKR',
-            minimumFractionDigits: 2,
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0,
         }).format(price);
     };
 
@@ -26,7 +25,7 @@ export default function MedicineList({ medicines, onEdit, onDelete }) {
     };
 
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'short', day: 'numeric' };
+        const options = { month: 'short', year: 'numeric' };
         return new Date(dateString).toLocaleDateString('en-US', options);
     };
 
@@ -35,58 +34,63 @@ export default function MedicineList({ medicines, onEdit, onDelete }) {
             <table className="medicine-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Medicine Name</th>
-                        <th>Category</th>
-                        <th>Description</th>
-                        <th>Manufacturer</th>
-                        <th>Stock / Reorder</th>
-                        <th>Expiry Date</th>
-                        <th>Price</th>
-                        <th>Actions</th>
+                        <th style={{ width: '30%' }}>Medicine & Identity</th>
+                        <th style={{ width: '15%' }}>Category</th>
+                        <th style={{ width: '15%' }}>Inventory</th>
+                        <th style={{ width: '15%' }}>Expiry</th>
+                        <th style={{ width: '15%' }}>Unit Price</th>
+                        <th style={{ width: '10%', textAlign: 'right' }}>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {medicines.map((medicine) => (
-                        <tr
-                            key={medicine.id}
-                            className={isExpired(medicine.expiryDate) ? 'row-expired' : ''}
-                        >
-                            <td className="medicine-id" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{medicine.id || '—'}</td>
-                            <td className="medicine-name" style={{ fontWeight: '600' }}>{medicine.name}</td>
-                            <td><span className="category-badge">{medicine.category || '—'}</span></td>
-                            <td style={{ maxWidth: '150px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={medicine.description}>
-                                {medicine.description || '—'}
+                        <tr key={medicine.id} className={isExpired(medicine.expiryDate) ? 'row-expired' : ''}>
+                            <td className="medicine-identity-cell">
+                                <div className="medicine-name">{medicine.name}</div>
+                                <div className="medicine-manufacturer">{medicine.manufacturer || 'General Pharma'}</div>
                             </td>
-                            <td>{medicine.manufacturer}</td>
                             <td>
-                                <span className={`stock-badge ${getStockClass(medicine.stock)}`}>
-                                    {medicine.stock} {getStockStatus(medicine.stock)}
-                                </span>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '4px' }}>
-                                    Reorder at: {medicine.reorderLevel != null ? medicine.reorderLevel : '—'}
+                                <span className="category-badge">{medicine.category || 'Medicine'}</span>
+                            </td>
+                            <td>
+                                <div className={`stock-badge ${getStockClass(medicine.stock)}`}>
+                                    <span className="status-indicator">{getStockStatus(medicine.stock)}</span>
+                                    <div className="stock-count">
+                                        {medicine.stock} <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>UNITS</span>
+                                    </div>
                                 </div>
                             </td>
-                            <td className={isExpired(medicine.expiryDate) ? 'expired' : ''}>
-                                {formatDate(medicine.expiryDate)}
-                                {isExpired(medicine.expiryDate) && <span className="expired-label"> (Expired)</span>}
+                            <td>
+                                <div className={`expiry-info ${isExpired(medicine.expiryDate) ? 'expired' : ''}`}>
+                                    <div className="expiry-date">{formatDate(medicine.expiryDate)}</div>
+                                    <div className="expiry-status">
+                                        {isExpired(medicine.expiryDate) ? '⚠️ EXPIRED' : 'VALID'}
+                                    </div>
+                                </div>
                             </td>
-                            <td className="price">{formatPrice(medicine.price)}</td>
-                            <td className="actions">
-                                <button
-                                    onClick={() => onEdit(medicine)}
-                                    className="btn-edit"
-                                    title="Edit medicine"
-                                >
-                                    Edit
-                                </button>
-                                <button
-                                    onClick={() => onDelete(medicine.id)}
-                                    className="btn-delete"
-                                    title="Delete medicine"
-                                >
-                                    Delete
-                                </button>
+                            <td>
+                                <div className="price-tag">
+                                    <span className="price-currency">PKR</span>
+                                    {formatPrice(medicine.price)}
+                                </div>
+                            </td>
+                            <td>
+                                <div className="actions-cell">
+                                    <button 
+                                        className="action-btn btn-edit" 
+                                        onClick={() => onEdit(medicine)}
+                                        title="Edit"
+                                    >
+                                        ✎
+                                    </button>
+                                    <button 
+                                        className="action-btn btn-delete" 
+                                        onClick={() => onDelete(medicine.id)}
+                                        title="Delete"
+                                    >
+                                        🗑
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}

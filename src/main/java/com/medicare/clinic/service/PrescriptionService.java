@@ -18,11 +18,17 @@ public class PrescriptionService {
 
     private final PrescriptionRepository prescriptionRepository;
     private final PrescriptionItemRepository prescriptionItemRepository;
+    private final com.medicare.clinic.repository.UserRepository userRepository;
+    private final com.medicare.clinic.repository.MedicineRepository medicineRepository;
 
     public PrescriptionService(PrescriptionRepository prescriptionRepository,
-            PrescriptionItemRepository prescriptionItemRepository) {
+            PrescriptionItemRepository prescriptionItemRepository,
+            com.medicare.clinic.repository.UserRepository userRepository,
+            com.medicare.clinic.repository.MedicineRepository medicineRepository) {
         this.prescriptionRepository = prescriptionRepository;
         this.prescriptionItemRepository = prescriptionItemRepository;
+        this.userRepository = userRepository;
+        this.medicineRepository = medicineRepository;
     }
 
     public List<PrescriptionDTO> getAllPrescriptions() {
@@ -48,6 +54,21 @@ public class PrescriptionService {
                 dto.setMedicineId(firstItem.getMedicineId());
                 dto.setDosage(firstItem.getDosage());
                 dto.setDuration(firstItem.getDuration());
+                
+                medicineRepository.findById(firstItem.getMedicineId())
+                    .ifPresent(m -> dto.setMedicineName(m.getName()));
+            }
+
+            // Lookup Patient Name
+            if (p.getPatientId() != null) {
+                userRepository.findByUsername(p.getPatientId())
+                    .ifPresent(u -> dto.setPatientName(u.getFullName()));
+            }
+
+            // Lookup Doctor Name
+            if (p.getDoctorId() != null) {
+                 userRepository.findByUsername(p.getDoctorId())
+                    .ifPresent(u -> dto.setDoctorName(u.getFullName()));
             }
 
             dtos.add(dto);
