@@ -31,13 +31,19 @@ export default function Navbar({ user, onLogout }) {
           alignItems: 'center', 
           justifyContent: 'center',
           fontWeight: 'bold',
-          fontSize: '1.2rem'
+          fontSize: '1rem'
         }}>M</div>
-        <h1 style={{ fontSize: '1.5rem', margin: 0, background: 'linear-gradient(to right, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MediCare</h1>
+        <h1 style={{ fontSize: '1.25rem', margin: 0, background: 'linear-gradient(to right, var(--primary), var(--accent))', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>MediCare</h1>
       </Link>
 
+      <div className="nav-links-center" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
+        <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Home</Link>
+        <Link to="/about" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>About Us</Link>
+        <Link to="/appointments" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Book Appointment</Link>
+      </div>
+
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-        {user && (
+        {user ? (
           <>
             <span style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
               Welcome, <strong style={{ color: 'var(--text-main)' }}>{user.username}</strong> 
@@ -47,6 +53,12 @@ export default function Navbar({ user, onLogout }) {
               Logout
             </button>
           </>
+        ) : (
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+              Login
+            </Link>
+          </div>
         )}
       </div>
     </nav>

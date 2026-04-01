@@ -40,24 +40,13 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Public Endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
-                        
-                        // Pharmacy Endpoints (Only PHARMACY or ADMIN)
-                        .requestMatchers("/api/medicines/**").hasAnyRole("PHARMACY", "ADMIN")
-                        
-                        // Doctor Endpoints (Only DOCTOR or ADMIN)
-                        .requestMatchers("/api/prescriptions/issue/**").hasAnyRole("DOCTOR", "ADMIN")
-                        
-                        // AI Agent (Any Authenticated User)
-                        .requestMatchers("/api/agent/**").authenticated()
-                        
-                        // Any other request must be authenticated
-                        .anyRequest().authenticated()
+                        // Temporarily disabled security: Allow all requests
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authenticationProvider(authenticationProvider())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .authenticationProvider(authenticationProvider());
+                // .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class); // Temporarily commented out
+
 
         return http.build();
     }

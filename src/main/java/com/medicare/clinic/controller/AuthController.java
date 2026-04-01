@@ -56,22 +56,51 @@ public class AuthController {
         ));
     }
 
+    private String generateUserId(Role role) {
+        String prefix = switch (role) {
+            case PATIENT -> "PAT";
+            case DOCTOR -> "DOC";
+            case PHARMACY -> "PHM";
+            case ADMIN -> "ADM";
+            case STAFF -> "STF";
+            default -> "USR";
+        };
+        long count = userRepository.countByRole(role);
+        String newId;
+        do {
+            count++;
+            newId = prefix + String.format("%03d", count);
+        } while (userRepository.findByUserId(newId).isPresent());
+        return newId;
+    }
+
     @PostMapping("/register")
     public ResponseEntity<?> register(@RequestBody User user) {
-        if (userRepository.findByUserId(user.getUserId()).isPresent()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "UserID already exists"));
+        // Ensure public registration is only for PATIENT
+        if (user.getRole() == null || user.getRole() == Role.PATIENT) {
+            user.setRole(Role.PATIENT);
+        } else {
+            return ResponseEntity.badRequest().body(Map.of("message", "Public registration is only for patients."));
         }
         
-        if (user.getUserId() == null || user.getUserId().isEmpty()) {
-            user.setUserId("U" + (System.currentTimeMillis() % 100000));
-        }
-
+        user.setUserId(generateUserId(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        // Ensure role is default as PATIENT if not assigned during registration
-        if (user.getRole() == null) user.setRole(Role.PATIENT);
         
         userRepository.save(user);
-        return ResponseEntity.ok(Map.of("message", "User registered successfully"));
+        return ResponseEntity.ok(Map.of("message", "Patient registered successfully", "userId", user.getUserId()));
+    }
+
+    @PostMapping("/register-employee")
+    public ResponseEntity<?> registerEmployee(@RequestBody User user) {
+        if (user.getRole() == null || user.getRole() == Role.PATIENT) {
+            return ResponseEntity.badRequest().body(Map.of("message", "This endpoint is for employee registration."));
+        }
+        
+        user.setUserId(generateUserId(user.getRole()));
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        userRepository.save(user);
+        return ResponseEntity.ok(Map.of("message", "Employee registered successfully", "userId", user.getUserId()));
     }
 }
 

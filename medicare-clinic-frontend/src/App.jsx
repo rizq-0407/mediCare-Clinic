@@ -7,6 +7,7 @@ import PatientDashboard from "./pages/PatientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import Register from "./pages/Register";
+import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
 import './index.css';
 
@@ -27,7 +28,7 @@ function App() {
             </div>
             {user && <Navbar user={user} onLogout={handleLogout} />}
             <Routes>
-                <Route path="/" element={<Navigate to="/login" replace />} />
+                <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login onLogin={setUser} />} />
                 <Route path="/register" element={<Register />} />
                 <Route path="/pharmacy" element={<Pharmacy />} />

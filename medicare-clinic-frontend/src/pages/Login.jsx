@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import API from '../services/api';
 import './Login.css';
 
-function Login() {
+function Login({ onLogin }) {
   const navigate = useNavigate();
   const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
@@ -26,6 +26,11 @@ function Login() {
       localStorage.setItem('role', role);
       localStorage.setItem('fullName', fullName);
       
+      if (onLogin) {
+        onLogin({ username: fullName || userId, role: role });
+      }
+      
+      
       // Redirect based on role
       switch(role) {
         case 'PHARMACY': navigate('/pharmacy'); break;
@@ -44,6 +49,9 @@ function Login() {
 
   return (
     <div className="login-page">
+      <Link to="/" style={{ position: 'absolute', top: '2rem', left: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', textDecoration: 'none', fontWeight: '600', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.7)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', zIndex: 10 }}>
+        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>&lt;</span> Home
+      </Link>
       <div className="bg-decor-container">
         <div className="float-circle"></div>
         <div className="float-symbol">☤</div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import API from '../services/api';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('schedules'); // 'schedules' or 'users'
@@ -7,6 +7,12 @@ export default function AdminDashboard() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [usersLoading, setUsersLoading] = useState(false);
+
+  // Employee form state
+  const [empFormData, setEmpFormData] = useState({
+    username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR'
+  });
+  const [empIsLoading, setEmpIsLoading] = useState(false);
 
   // Form State
   const [isEditing, setIsEditing] = useState(false);
@@ -31,8 +37,12 @@ export default function AdminDashboard() {
 
   const fetchSchedules = async () => {
     try {
-      const response = await axios.get('/schedules');
-      setSchedules(response.data);
+      const response = await API.get('/schedules');
+      if (Array.isArray(response.data)) {
+        setSchedules(response.data);
+      } else {
+        throw new Error("Invalid array data");
+      }
     } catch (err) {
       if (!err.response) {
         setSchedules([
@@ -48,8 +58,12 @@ export default function AdminDashboard() {
   const fetchUsers = async () => {
     setUsersLoading(true);
     try {
-      const response = await axios.get('/users');
-      setUsers(response.data);
+      const response = await API.get('/users');
+      if (Array.isArray(response.data)) {
+        setUsers(response.data);
+      } else {
+        throw new Error("Invalid array data");
+      }
     } catch (err) {
       if (!err.response) {
         setUsers([
@@ -83,9 +97,9 @@ export default function AdminDashboard() {
     e.preventDefault();
     try {
       if (isEditing) {
-        await axios.put(`/schedules/${currentId}`, formData);
+        await API.put(`/schedules/${currentId}`, formData);
       } else {
-        await axios.post('/schedules', formData);
+        await API.post('/schedules', formData);
       }
 
       setFormData({ doctorName: '', specialization: 'General', date: '', time: '', roomNumber: 'Room 101', availableSlots: 0 });
@@ -122,7 +136,7 @@ export default function AdminDashboard() {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this schedule?')) {
       try {
-        await axios.delete(`/schedules/${id}`);
+        await API.delete(`/schedules/${id}`);
         fetchSchedules();
       } catch (err) {
         if (!err.response) {
@@ -143,7 +157,7 @@ export default function AdminDashboard() {
 
     if (window.confirm(`Are you sure you want to permanently remove user "${username}"?`)) {
       try {
-        await axios.delete(`/users/${id}`);
+        await API.delete(`/users/${id}`);
         fetchUsers();
       } catch (err) {
         if (!err.response) {
@@ -158,7 +172,7 @@ export default function AdminDashboard() {
 
   const handleApproveRequest = async (id) => {
     try {
-      await axios.put(`/schedules/${id}/approve`);
+      await API.put(`/schedules/${id}/approve`);
       alert("Schedule updated and Doctor notified!");
       fetchSchedules();
     } catch (err) {
@@ -177,7 +191,7 @@ export default function AdminDashboard() {
 
   const handleRejectRequest = async (id) => {
     try {
-      await axios.put(`/schedules/${id}/reject`, { reason: 'Slot already taken' });
+      await API.put(`/schedules/${id}/reject`, { reason: 'Slot already taken' });
       alert("Request marked as TAKEN and Doctor notified.");
       fetchSchedules();
     } catch (err) {
@@ -189,10 +203,24 @@ export default function AdminDashboard() {
     }
   };
 
-  const handleCancel = () => {
-    setFormData({ doctorName: '', specialization: 'General', date: '', time: '', roomNumber: 'Room 101', availableSlots: 0 });
-    setIsEditing(false);
-    setCurrentId(null);
+  const handleEmpInputChange = (e) => {
+    const { name, value } = e.target;
+    setEmpFormData({ ...empFormData, [name]: value });
+  };
+
+  const handleEmployeeRegistration = async (e) => {
+    e.preventDefault();
+    setEmpIsLoading(true);
+    try {
+      const response = await API.post('/auth/register-employee', empFormData);
+      alert(`Registration successful! Generated System ID for login is: ${response.data.userId}`);
+      setEmpFormData({ username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR' });
+      fetchUsers();
+    } catch (err) {
+      alert(err.response?.data?.message || "Employee registration failed.");
+    } finally {
+      setEmpIsLoading(false);
+    }
   };
 
   return (
@@ -225,6 +253,14 @@ export default function AdminDashboard() {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
             Personnel
           </button>
+          <button
+            className={`btn ${activeTab === 'register' ? 'btn-primary' : 'btn-soft'}`}
+            onClick={() => setActiveTab('register')}
+            style={{ width: '100%', justifyContent: 'flex-start', padding: activeTab === 'register' ? '1rem 1.5rem' : '1rem 1.5rem' }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line></svg>
+            Register Employee
+          </button>
         </nav>
 
         <div className="glass-panel" style={{ marginTop: 'auto', padding: '1rem', borderRadius: '16px' }}>
@@ -237,7 +273,7 @@ export default function AdminDashboard() {
       <main className="main-content">
         <header className="header-row">
           <div>
-            <h1>{activeTab === 'schedules' ? 'Schedule Management' : 'Clinic Personnel'}</h1>
+            <h1>{activeTab === 'schedules' ? 'Schedule Management' : activeTab === 'users' ? 'Clinic Personnel' : 'Employee Registration'}</h1>
             <p style={{ color: 'var(--text-secondary)' }}>Welcome back to the administrator dashboard.</p>
           </div>
 
@@ -391,7 +427,7 @@ export default function AdminDashboard() {
               </div>
             </aside>
           </div>
-        ) : (
+        ) : activeTab === 'users' ? (
           /* User Management Tab */
           <div className="animate-fade-in">
             <div className="stat-grid">
@@ -420,11 +456,11 @@ export default function AdminDashboard() {
                   <div key={user.id} className="soft-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                       <div className="stat-icon" style={{ width: '48px', height: '48px', borderRadius: '50%', fontSize: '1.2rem' }}>
-                        {user.username.charAt(0).toUpperCase()}
+                        {(user.username || 'U').charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: '700' }}>{user.username}</div>
-                        <span className={`badge ${user.role === 'Admin' ? 'badge-danger' : user.role === 'Doctor' ? 'badge-success' : 'badge-info'}`}>
+                        <div style={{ fontWeight: '700' }}>{user.username || user.id || 'Unknown User'}</div>
+                        <span className={`badge ${user.role === 'ADMIN' ? 'badge-danger' : user.role === 'DOCTOR' ? 'badge-success' : 'badge-info'}`}>
                           {user.role}
                         </span>
                       </div>
@@ -440,6 +476,59 @@ export default function AdminDashboard() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        ) : (
+          /* Employee Registration Tab */
+          <div className="animate-fade-in" style={{ maxWidth: '600px', margin: '0 auto' }}>
+            <div className="soft-card" style={{ padding: '2.5rem' }}>
+              <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Register New Personnel</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>Create access accounts for doctors, staff, and admins</p>
+              </div>
+
+              <form onSubmit={handleEmployeeRegistration}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Full Name</label>
+                    <input type="text" className="form-input" name="fullName" value={empFormData.fullName} onChange={handleEmpInputChange} required placeholder="Dr. Jane Doe" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">System Username</label>
+                    <input type="text" className="form-input" name="username" value={empFormData.username} onChange={handleEmpInputChange} required placeholder="janedoe" />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Role / Access Level</label>
+                  <select className="form-input" name="role" value={empFormData.role} onChange={handleEmpInputChange} required>
+                    <option value="DOCTOR">Doctor (Clinical Access)</option>
+                    <option value="PHARMACY">Pharmacist (Inventory Access)</option>
+                    <option value="STAFF">Staff (Support Access)</option>
+                    <option value="ADMIN">Administrator (Full Access)</option>
+                  </select>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div className="form-group">
+                    <label className="form-label">Email Address</label>
+                    <input type="email" className="form-input" name="email" value={empFormData.email} onChange={handleEmpInputChange} required placeholder="email@clinic.com" />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Contact Number</label>
+                    <input type="tel" className="form-input" name="contactNumber" value={empFormData.contactNumber} onChange={handleEmpInputChange} required placeholder="+1 234 567 8900" />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Initial Password</label>
+                  <input type="password" className="form-input" name="password" value={empFormData.password} onChange={handleEmpInputChange} required placeholder="Create secure password" />
+                </div>
+
+                <button type="submit" className={`btn btn-primary ${empIsLoading ? 'loading' : ''}`} style={{ width: '100%', marginTop: '1.5rem', padding: '1rem', fontSize: '1rem' }} disabled={empIsLoading}>
+                  {empIsLoading ? 'Registering...' : 'Register Employee & Generate ID'}
+                </button>
+              </form>
             </div>
           </div>
         )}
