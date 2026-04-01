@@ -17,10 +17,10 @@ export default function Register() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // Map frontend roles to Backend Role Enum values
-      const backendRole = role.toUpperCase();
+      // Always register as PATIENT for public
+      const backendRole = 'PATIENT';
       
-      await axios.post('http://localhost:8080/api/auth/register', { 
+      const response = await axios.post('http://localhost:8080/api/auth/register', { 
         username, 
         password, 
         email,
@@ -29,7 +29,7 @@ export default function Register() {
         role: backendRole 
       });
       
-      alert('Registration successful! Please login.');
+      alert(`Registration successful! Your System ID is: ${response.data.userId}. Please login using this ID.`);
       navigate('/login');
     } catch (err) {
       console.error("Registration error:", err);
@@ -41,6 +41,9 @@ export default function Register() {
 
   return (
     <div className="login-page">
+      <Link to="/" style={{ position: 'absolute', top: '2rem', left: '2rem', display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-main)', textDecoration: 'none', fontWeight: '600', padding: '0.5rem 1rem', background: 'rgba(255,255,255,0.7)', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', zIndex: 10 }}>
+        <span style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>&lt;</span> Home
+      </Link>
       <div className="bg-decor-container">
         <div className="float-circle"></div>
         <div className="float-symbol">☤</div>
@@ -126,18 +129,6 @@ export default function Register() {
             </div>
           </div>
 
-          <div className="login-field">
-            <label>Account Type (Role)</label>
-            <div className="login-input-wrap">
-              <span className="input-icon">🏥</span>
-              <select value={role} onChange={(e) => setRole(e.target.value)} required>
-                <option value="PATIENT">Patient (Standard Access)</option>
-                <option value="DOCTOR">Doctor (Clinical Access)</option>
-                <option value="PHARMACY">Pharmacist (Inventory Access)</option>
-                <option value="ADMIN">Administrator (Full Access)</option>
-              </select>
-            </div>
-          </div>
 
           <button type="submit" className={`login-btn ${isLoading ? 'loading' : ''}`} disabled={isLoading}>
             {isLoading ? <span className="btn-spinner"></span> : <>Register Now →</>}
