@@ -40,12 +40,12 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUserId(), request.getPassword())
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
-        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUserId());
+        final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwt = jwtService.generateToken(userDetails);
         
-        User user = userRepository.findByUserId(request.getUserId()).orElseThrow();
+        User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
         
         return ResponseEntity.ok(Map.of(
             "token", jwt,
@@ -83,6 +83,10 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "Public registration is only for patients."));
         }
         
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken."));
+        }
+        
         user.setUserId(generateUserId(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
@@ -96,6 +100,10 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", "This endpoint is for employee registration."));
         }
         
+        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+            return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken."));
+        }
+        
         user.setUserId(generateUserId(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         
@@ -106,6 +114,6 @@ public class AuthController {
 
 @Data
 class LoginRequest {
-    private String userId;
+    private String username;
     private String password;
 }
