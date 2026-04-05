@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import MedicineList from '../components/MedicineList';
 import MedicineForm from '../components/MedicineForm';
 import PrescriptionForm from '../components/PrescriptionForm';
+import API from '../services/api';
 import './Pharmacy.css';
 
 export default function Pharmacy() {
     const navigate = useNavigate();
     const [medicines, setMedicines] = useState([]);
     const [prescriptions, setPrescriptions] = useState([]);
+    const [patients, setPatients] = useState([]);
     const [showMedicineForm, setShowMedicineForm] = useState(false);
     const [showPrescriptionForm, setShowPrescriptionForm] = useState(false);
     const [editingMedicine, setEditingMedicine] = useState(null);
@@ -18,11 +20,10 @@ export default function Pharmacy() {
     const [statusFilter, setStatusFilter] = useState('ALL');
     const [toastMsg, setToastMsg] = useState(null);
 
-    const API_BASE_URL = 'http://localhost:8080/api';
-
     useEffect(() => {
         fetchMedicines();
         fetchPrescriptions();
+        fetchPatients();
     }, []);
 
     const showToast = (msg, type = 'success') => {
@@ -33,13 +34,18 @@ export default function Pharmacy() {
     const fetchMedicines = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/medicines`);
-            if (!response.ok) throw new Error(`Server error ${response.status}`);
-            const data = await response.json();
-            setMedicines(data);
+            const response = await API.get('/medicines');
+            setMedicines(response.data || []);
             setError(null);
         } catch (err) {
-            setError('⚠️ Could not connect to the backend server. (' + err.message + ')');
+            const msg = err.response?.data?.message || err.message;
+            const isNetworkError = !err.response;
+            setError(
+                isNetworkError
+                    ? '🔌 Backend is offline — make sure Spring Boot is running on port 8080.'
+                    : `⚠️ Server error: ${msg}`
+            );
+            setMedicines([]);
         } finally {
             setLoading(false);
         }
@@ -47,63 +53,54 @@ export default function Pharmacy() {
 
     const fetchPrescriptions = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/prescriptions`);
-            if (!response.ok) throw new Error(`Server error ${response.status}`);
-            const data = await response.json();
-            setPrescriptions(data);
+            const response = await API.get('/prescriptions');
+            setPrescriptions(response.data || []);
         } catch (err) {
-            console.error('Error fetching prescriptions:', err);
+            console.error('Error fetching prescriptions:', err.message);
+        }
+    };
+
+    const fetchPatients = async () => {
+        try {
+            const response = await API.get('/users/patients');
+            setPatients(response.data || []);
+        } catch (err) {
+            console.error('Error fetching patients:', err.message);
         }
     };
 
     // ──── Medicine CRUD ────────────────────────────────────────────────
     const handleAddMedicine = async (medicineData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/medicines`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(medicineData)
-            });
-            if (!response.ok) throw new Error('Failed to add medicine');
-            const newMedicine = await response.json();
-            setMedicines([...medicines, newMedicine]);
+            const response = await API.post('/medicines', medicineData);
+            setMedicines([...medicines, response.data]);
             setShowMedicineForm(false);
             showToast('Medicine added successfully!');
         } catch (err) {
-            setError('Error adding medicine: ' + err.message);
+            setError('Error adding medicine: ' + (err.response?.data?.message || err.message));
         }
     };
 
     const handleUpdateMedicine = async (id, updatedData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/medicines/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedData)
-            });
-            if (!response.ok) throw new Error('Failed to update medicine');
-            const updated = await response.json();
-            setMedicines(medicines.map(m => m.id === id ? updated : m));
+            const response = await API.put(`/medicines/${id}`, updatedData);
+            setMedicines(medicines.map(m => m.id === id ? response.data : m));
             setEditingMedicine(null);
             setShowMedicineForm(false);
             showToast('Medicine updated!');
         } catch (err) {
-            setError('Error updating medicine: ' + err.message);
+            setError('Error updating medicine: ' + (err.response?.data?.message || err.message));
         }
     };
 
     const handleDeleteMedicine = async (id) => {
         if (window.confirm('Delete this medicine from stock?')) {
             try {
-                const response = await fetch(`${API_BASE_URL}/medicines/${id}`, { method: 'DELETE' });
-                if (!response.ok) {
-                    const errData = await response.json().catch(() => null);
-                    throw new Error((errData && errData.error) ? errData.error : 'Failed to delete medicine');
-                }
+                await API.delete(`/medicines/${id}`);
                 setMedicines(medicines.filter(m => m.id !== id));
                 showToast('Medicine removed from stock.', 'info');
             } catch (err) {
-                setError('Error deleting medicine: ' + err.message);
+                setError('Error deleting medicine: ' + (err.response?.data?.error || err.message));
             }
         }
     };
@@ -116,47 +113,34 @@ export default function Pharmacy() {
     // ──── Prescription CRUD ────────────────────────────────────────────
     const handleAddPrescription = async (prescriptionData) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/prescriptions`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(prescriptionData)
-            });
-            if (!response.ok) throw new Error('Failed to add prescription');
-            const newPrescription = await response.json();
-            setPrescriptions([...prescriptions, newPrescription]);
+            const response = await API.post('/prescriptions', prescriptionData);
+            setPrescriptions([...prescriptions, response.data]);
             setShowPrescriptionForm(false);
             showToast('Prescription sent to pharmacy (Pending)!');
         } catch (err) {
-            setError('Error adding prescription: ' + err.message);
+            setError('Error adding prescription: ' + (err.response?.data?.message || err.message));
         }
     };
 
     // ──── Pharmacist: update prescription status ────────────────────────
     const handleUpdateStatus = async (id, newStatus) => {
         try {
-            const response = await fetch(`${API_BASE_URL}/prescriptions/${id}/status`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status: newStatus })
-            });
-            if (!response.ok) throw new Error('Failed to update status');
-            const updated = await response.json();
-            setPrescriptions(prescriptions.map(p => p.id === id ? { ...p, status: updated.status } : p));
+            const response = await API.patch(`/prescriptions/${id}/status`, { status: newStatus });
+            setPrescriptions(prescriptions.map(p => p.id === id ? { ...p, status: response.data.status } : p));
             showToast(`✅ Prescription marked as ${newStatus}!`);
         } catch (err) {
-            setError('Error updating status: ' + err.message);
+            setError('Error updating status: ' + (err.response?.data?.message || err.message));
         }
     };
 
     const handleDeletePrescription = async (id) => {
         if (window.confirm('Delete this prescription?')) {
             try {
-                const response = await fetch(`${API_BASE_URL}/prescriptions/${id}`, { method: 'DELETE' });
-                if (!response.ok) throw new Error('Failed to delete prescription');
+                await API.delete(`/prescriptions/${id}`);
                 setPrescriptions(prescriptions.filter(p => p.id !== id));
                 showToast('Prescription deleted.', 'info');
             } catch (err) {
-                setError('Error deleting prescription: ' + err.message);
+                setError('Error deleting prescription: ' + (err.response?.data?.message || err.message));
             }
         }
     };
@@ -196,10 +180,6 @@ export default function Pharmacy() {
         return { label: 'Dispensed', cls: 'badge-completed' };
     };
 
-    const mockPatients = [
-        { id: 'PAT001', name: 'Patient Rizquan' },
-        { id: 'PAT002', name: 'Patient John' }
-    ];
 
     return (
         <div className="ph-layout">
@@ -213,31 +193,16 @@ export default function Pharmacy() {
                 </div>
 
                 <nav className="sidebar-nav">
-                    <button
-                        id="tab-prescriptions"
-                        className={`nav-item ${activeTab === 'prescriptions' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('prescriptions')}
-                    >
-                        <span className="nav-icon">📋</span>
-                        <span>Prescriptions</span>
+                    <button className={`nav-item ${activeTab === 'prescriptions' ? 'active' : ''}`} onClick={() => setActiveTab('prescriptions')}>
+                        <span className="nav-icon">📋</span> Queue
                         {pendingCount > 0 && <span className="nav-badge nav-badge-warn">{pendingCount}</span>}
                     </button>
-                    <button
-                        id="tab-medicines"
-                        className={`nav-item ${activeTab === 'medicines' ? 'active' : ''}`}
-                        onClick={() => setActiveTab('medicines')}
-                    >
-                        <span className="nav-icon">💊</span>
-                        <span>Medicine Stock</span>
-                        {lowStockCount > 0 && <span className="nav-badge nav-badge-warn">{lowStockCount}</span>}
+                    <button className={`nav-item ${activeTab === 'medicines' ? 'active' : ''}`} onClick={() => setActiveTab('medicines')}>
+                        <span className="nav-icon">💊</span> Inventory
+                        {lowStockCount > 0 && <span className="nav-badge nav-badge-warn">{lowStockCount} low</span>}
                     </button>
-                    <button
-                        id="tab-new-prescription"
-                        className={`nav-item ${activeTab === 'new-prescription' ? 'active' : ''}`}
-                        onClick={() => { setActiveTab('new-prescription'); setShowPrescriptionForm(true); }}
-                    >
-                        <span className="nav-icon">✍️</span>
-                        <span>New Prescription</span>
+                    <button className={`nav-item ${activeTab === 'new-prescription' ? 'active' : ''}`} onClick={() => { setActiveTab('new-prescription'); setShowPrescriptionForm(true); }}>
+                        <span className="nav-icon">✍️</span> New Script
                     </button>
                     <button
                         id="tab-ai-agent"
@@ -268,14 +233,8 @@ export default function Pharmacy() {
             <main className="ph-main">
                 <header className="ph-topbar">
                     <div>
-                        <h1 className="topbar-title">
-                            {activeTab === 'prescriptions' && 'Prescription Dashboard'}
-                            {activeTab === 'medicines' && 'Medicine Stock'}
-                            {activeTab === 'new-prescription' && 'Create Prescription'}
-                        </h1>
-                        <p className="topbar-subtitle">
-                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
+                        <h1 className="topbar-title">Pharmacy Dashboard</h1>
+                        <p className="topbar-subtitle">Manage medication queue and inventory</p>
                     </div>
                     <button className="topbar-logout-btn" onClick={handleLogout}>
                         <span>⏻</span> Logout
@@ -297,56 +256,52 @@ export default function Pharmacy() {
 
                 {activeTab === 'prescriptions' && (
                     <div className="tab-content">
-                        {/* Stats row */}
-                        <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+                        <div className="stats-grid">
                             <div className="stat-card stat-pending">
                                 <div className="stat-icon">⏳</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{pendingCount}</span>
-                                    <span className="stat-label">Pending</span>
+                                    <div className="stat-label">Pending</div>
+                                    <div className="stat-value">{pendingCount}</div>
                                 </div>
                             </div>
                             <div className="stat-card stat-completed">
-                                <div className="stat-icon">💊</div>
+                                <div className="stat-icon">✅</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{dispensedCount}</span>
-                                    <span className="stat-label">Dispensed</span>
+                                    <div className="stat-label">Dispensed</div>
+                                    <div className="stat-value">{dispensedCount}</div>
                                 </div>
                             </div>
                             <div className="stat-card stat-total">
-                                <div className="stat-icon">📊</div>
+                                <div className="stat-icon">📦</div>
                                 <div className="stat-info">
-                                    <span className="stat-value">{prescriptions.length}</span>
-                                    <span className="stat-label">Total</span>
+                                    <div className="stat-label">Total Scripts</div>
+                                    <div className="stat-value">{prescriptions.length}</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Filter tabs */}
                         <div className="filter-bar">
-                            <span className="filter-label">Filter by Status:</span>
-                            {['ALL', 'Pending', 'Dispensed'].map(f => (
-                                <button
-                                    key={f}
-                                    className={`filter-btn ${statusFilter === f ? 'filter-active' : ''}`}
-                                    onClick={() => setStatusFilter(f)}
-                                >
-                                    {f}
-                                </button>
-                            ))}
+                            <span className="filter-label">Filter:</span>
+                            <button
+                                className={`filter-btn ${statusFilter === 'ALL' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('ALL')}
+                            >All Scripts</button>
+                            <button
+                                className={`filter-btn ${statusFilter === 'Pending' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('Pending')}
+                            >Pending Only</button>
+                            <button
+                                className={`filter-btn ${statusFilter === 'Dispensed' ? 'filter-active' : ''}`}
+                                onClick={() => setStatusFilter('Dispensed')}
+                            >Dispensed Only</button>
                         </div>
 
-                        {/* Prescriptions list */}
                         <div className="prescriptions-grid">
                             {filteredPrescriptions.length === 0 ? (
                                 <div className="empty-state">
                                     <div className="empty-icon">📭</div>
                                     <h3>No prescriptions found</h3>
-                                    <p>
-                                        {statusFilter !== 'ALL'
-                                            ? `No ${statusFilter.toLowerCase()} prescriptions at this time.`
-                                            : 'No prescriptions have been sent yet.'}
-                                    </p>
+                                    <p>{statusFilter !== 'ALL' ? `No ${statusFilter.toLowerCase()} prescriptions match your filter.` : 'The pharmacy queue is currently empty.'}</p>
                                 </div>
                             ) : (
                                 filteredPrescriptions.map(script => {
@@ -358,7 +313,7 @@ export default function Pharmacy() {
                                         >
                                             <div className="pcard-header">
                                                 <div className="pcard-id">
-                                                    <span className="pcard-icon">📄</span>
+                                                    <span className="pcard-icon">💊</span>
                                                     <span>#{script.id}</span>
                                                 </div>
                                                 <span className={`status-badge ${badge.cls}`}>{badge.label}</span>
@@ -367,15 +322,15 @@ export default function Pharmacy() {
                                             <div className="pcard-body">
                                                 <div className="pcard-row">
                                                     <span className="pcard-field-label">👤 Patient</span>
-                                                    <span className="pcard-field-val">{script.patientId || '—'}</span>
+                                                    <span className="pcard-field-val" style={{ fontWeight: '700' }}>{script.patientName || script.patientId || '—'}</span>
                                                 </div>
                                                 <div className="pcard-row">
                                                     <span className="pcard-field-label">🩺 Doctor</span>
-                                                    <span className="pcard-field-val">{script.doctorId || '—'}</span>
+                                                    <span className="pcard-field-val">{script.doctorName || script.doctorId || '—'}</span>
                                                 </div>
                                                 <div className="pcard-row">
                                                     <span className="pcard-field-label">💊 Medicine</span>
-                                                    <span className="pcard-field-val">{script.medicineId || '—'}</span>
+                                                    <span className="pcard-field-val" style={{ color: 'var(--primary)', fontWeight: '700' }}>{script.medicineName || script.medicineId || '—'}</span>
                                                 </div>
                                                 <div className="pcard-row">
                                                     <span className="pcard-field-label">📏 Dosage</span>
@@ -424,13 +379,13 @@ export default function Pharmacy() {
 
                 {activeTab === 'medicines' && (
                     <div className="tab-content">
-                        <div className="section-header">
+                        <div className="medicine-inventory-header">
                             <div>
                                 <h2 className="section-title">Medicine Inventory</h2>
                                 <p className="section-sub">{medicines.length} items in stock</p>
                             </div>
                             <button
-                                className="ph-btn ph-btn-primary"
+                                className="ph-btn-primary"
                                 onClick={() => { setShowMedicineForm(!showMedicineForm); setEditingMedicine(null); }}
                             >
                                 {showMedicineForm ? '✕ Cancel' : '+ Add Medicine'}
@@ -483,7 +438,7 @@ export default function Pharmacy() {
                             <PrescriptionForm
                                 onSubmit={handleAddPrescription}
                                 medicines={medicines}
-                                patients={mockPatients}
+                                patients={patients}
                                 onCancel={() => setActiveTab('prescriptions')}
                             />
                         </div>

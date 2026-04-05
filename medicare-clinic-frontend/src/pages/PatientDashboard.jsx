@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './PatientDashboard.css';
+import API from '../services/api';
 
 export default function PatientDashboard() {
     const navigate = useNavigate();
@@ -10,17 +10,18 @@ export default function PatientDashboard() {
     const [activeTab, setActiveTab] = useState('overview');
     const [toastMsg, setToastMsg] = useState(null);
     const [userProfile, setUserProfile] = useState({
-        name: 'Patient Rizquan',
-        id: 'PAT001',
+        name: localStorage.getItem('fullName') || 'Unknown Patient',
+        id: localStorage.getItem('userId') || 'PAT001',
         age: 24,
-        email: 'rizquan@medicare.com',
-        phone: '+94 77 123 4567',
-        address: 'No 123, Main Street, Colombo',
+        email: 'Loading...',
+        phone: 'Loading...',
+        address: 'Loading...',
         bloodGroup: 'O+',
-        allergies: 'Penicillin, Dust'
+        allergies: 'None'
     });
 
-    const API_BASE_URL = 'http://localhost:8080/api';
+    // userId stored by Login.jsx (e.g. PAT001)
+    const patientUserId = localStorage.getItem('userId') || '';
 
     useEffect(() => {
         fetchPrescriptions();
@@ -34,14 +35,12 @@ export default function PatientDashboard() {
     const fetchPrescriptions = async () => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/prescriptions`);
-            if (!response.ok) throw new Error(`Server error ${response.status}`);
-            const data = await response.json();
-            // Filter prescriptions for this patient (mocked for now)
-            setPrescriptions(data.filter(p => !p.patientId || p.patientId === 'PAT001'));
+            // Use the patient-specific endpoint with JWT auth
+            const response = await API.get(`/prescriptions/patient/${patientUserId}`);
+            setPrescriptions(response.data);
             setError(null);
         } catch (err) {
-            setError('⚠️ Could not connect to the backend server. (' + err.message + ')');
+            setError('⚠️ Could not connect to the backend server. (' + (err.response?.data?.message || err.message) + ')');
         } finally {
             setLoading(false);
         }
@@ -61,304 +60,278 @@ export default function PatientDashboard() {
     const getStatusBadge = (status) => {
         const isPending = !status || status === 'Pending' || status === 'NEW' || status === 'PENDING';
         if (isPending) {
-            return { label: 'Pending', cls: 'badge-pending' };
+            return { label: 'Pending', cls: 'badge-danger' };
         }
-        return { label: 'Dispensed', cls: 'badge-completed' };
+        return { label: 'Dispensed', cls: 'badge-success' };
     };
 
     return (
-        <div className="pt-layout">
-            <aside className="pt-sidebar">
-                <div className="sidebar-brand">
-                    <span className="brand-icon">🏥</span>
-                    <div>
-                        <h2>MediCare</h2>
-                        <p>Patient Portal</p>
-                    </div>
+        <div className="dashboard-layout animate-fade-in">
+            <div className="bg-decor-container">
+                <div className="float-circle"></div>
+                <div className="float-symbol">☤</div>
+            </div>
+            {/* Sidebar */}
+            <aside className="glass-panel" style={{ margin: '1rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
+                <div className="logo" style={{ marginBottom: '2.5rem', padding: '0.5rem' }}>
+                    <div className="logo-m">M</div>
+                    <span>MediCare</span>
                 </div>
 
-                <nav className="sidebar-nav">
+                <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1 }}>
                     <button
-                        className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
+                        className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-soft'}`}
                         onClick={() => setActiveTab('overview')}
+                        style={{ width: '100%', justifyContent: 'flex-start' }}
                     >
-                        <span className="nav-icon">📊</span>
-                        <span>Overview</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        Overview
                     </button>
                     <button
-                        className={`nav-item ${activeTab === 'prescriptions' ? 'active' : ''}`}
+                        className={`btn ${activeTab === 'prescriptions' ? 'btn-primary' : 'btn-soft'}`}
                         onClick={() => setActiveTab('prescriptions')}
+                        style={{ width: '100%', justifyContent: 'flex-start' }}
                     >
-                        <span className="nav-icon">📋</span>
-                        <span>My Prescriptions</span>
-                        {prescriptions.length > 0 && <span className="nav-badge">{prescriptions.length}</span>}
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        Prescriptions
                     </button>
                     <button
-                        className={`nav-item ${activeTab === 'profile' ? 'active' : ''}`}
+                        className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-soft'}`}
                         onClick={() => setActiveTab('profile')}
+                        style={{ width: '100%', justifyContent: 'flex-start' }}
                     >
-                        <span className="nav-icon">👤</span>
-                        <span>Personal Info</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        Profile
                     </button>
+
+                    <div style={{ height: '1px', background: 'var(--glass-border)', margin: '1rem 0' }} />
+
                     <button
-                        className="nav-item ai-nav-item"
+                        className="btn btn-soft"
                         onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}
+                        style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--primary)' }}
                     >
-                        <span className="nav-icon">🤖</span>
-                        <span>AI Assistant</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"></path><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
+                        Ask AI Assistant
                     </button>
                 </nav>
 
-                <div className="sidebar-footer">
-                    <div className="sidebar-user">
-                        <div className="user-avatar">R</div>
-                        <div>
-                            <p className="user-name">{userProfile.name}</p>
-                            <p className="user-role">#PT-2024-001</p>
-                        </div>
-                    </div>
-                    <button className="logout-btn" onClick={handleLogout}>
-                        <span>⏻</span> Logout
-                    </button>
-                </div>
+                <button className="btn btn-soft" onClick={handleLogout} style={{ marginTop: 'auto', color: 'var(--danger)' }}>
+                    Logout
+                </button>
             </aside>
 
-            <main className="pt-main">
-                <header className="pt-topbar">
+            {/* Main Content */}
+            <main className="main-content">
+                <header className="header-row">
                     <div>
-                        <h1 className="topbar-title">
-                            {activeTab === 'overview' && 'Good Evening, ' + userProfile.name.split(' ')[1]}
-                            {activeTab === 'prescriptions' && 'My Medical Records'}
-                            {activeTab === 'profile' && 'Patient Profile'}
-                        </h1>
-                        <p className="topbar-subtitle">
-                            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                        </p>
+                        <h1>Patient Portal</h1>
+                        <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {userProfile.name.split(' ')[1]}</p>
                     </div>
-                    <div className="topbar-actions">
-                        <button className="topbar-btn secondary" onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}>
-                             Chat with AI Agent
-                        </button>
-                        <button className="topbar-logout-btn" onClick={handleLogout}>
-                            <span>⏻</span> Logout
-                        </button>
+
+                    <div className="soft-card" style={{ padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
+                        <div className="badge badge-info">ID: {userProfile.id}</div>
+                        <span style={{ fontWeight: '600' }}>Active Account</span>
                     </div>
                 </header>
 
-                {toastMsg && (
-                    <div className={`toast toast-${toastMsg.type}`}>
-                        {toastMsg.text}
-                    </div>
-                )}
-
                 {error && (
-                    <div className="pt-error">
-                        <span>{error}</span>
-                        <button onClick={() => setError(null)}>✕</button>
+                    <div className="soft-card" style={{ padding: '1rem 1.5rem', marginBottom: '2rem', borderLeft: '6px solid var(--danger)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: 'var(--danger)', fontWeight: '600' }}>{error}</span>
+                        <button onClick={() => setError(null)} className="btn-soft" style={{ padding: '0.4rem' }}>✕</button>
                     </div>
                 )}
 
-                <div className="tab-content">
-                    {activeTab === 'overview' && (
-                        <div className="overview-container">
-                            <div className="pt-stats-grid">
-                                <div className="stat-card">
-                                    <div className="stat-icon">💊</div>
-                                    <div className="stat-info">
-                                        <span className="stat-value">{prescriptions.length}</span>
-                                        <span className="stat-label">Prescriptions</span>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">📅</div>
-                                    <div className="stat-info">
-                                        <span className="stat-value">0</span>
-                                        <span className="stat-label">Appointments</span>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">🩸</div>
-                                    <div className="stat-info">
-                                        <span className="stat-value">{userProfile.bloodGroup}</span>
-                                        <span className="stat-label">Blood Type</span>
-                                    </div>
-                                </div>
-                                <div className="stat-card">
-                                    <div className="stat-icon">📍</div>
-                                    <div className="stat-info">
-                                        <span className="stat-value">Colombo</span>
-                                        <span className="stat-label">Primary Clinic</span>
-                                    </div>
+                {activeTab === 'overview' && (
+                    <div className="animate-fade-in">
+                        <div className="stat-grid">
+                            <div className="soft-card stat-card">
+                                <div className="stat-icon">📄</div>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Total Prescriptions</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{prescriptions.length}</div>
                                 </div>
                             </div>
-
-                            <div className="dashboard-sections">
-                                <section className="db-section recent-records">
-                                    <div className="section-header">
-                                        <h3>Recent Prescriptions</h3>
-                                        <button onClick={() => setActiveTab('prescriptions')}>View All</button>
-                                    </div>
-                                    <div className="records-list">
-                                        {prescriptions.slice(0, 3).map(p => {
-                                            const badge = getStatusBadge(p.status);
-                                            return (
-                                                <div key={p.id} className="record-item">
-                                                    <div className="record-icon">📄</div>
-                                                    <div className="record-details">
-                                                        <p className="record-title">{p.medicineId}</p>
-                                                        <p className="record-meta">{formatDate(p.createdAt)} • {p.dosage}</p>
-                                                    </div>
-                                                    <span className={`status-tag ${badge.cls}`}>{badge.label}</span>
-                                                </div>
-                                            );
-                                        })}
-                                        {prescriptions.length === 0 && <p className="empty-text">No recent records found.</p>}
-                                    </div>
-                                </section>
-
-                                <section className="db-section quick-actions">
-                                    <h3>Quick Actions</h3>
-                                    <div className="actions-grid">
-                                        <button className="action-card" onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}>
-                                            <span className="action-icon">🤖</span>
-                                            <span>Start AI Chat</span>
-                                            <p>Book appointments or ask health questions</p>
-                                        </button>
-                                        <button className="action-card" onClick={() => setActiveTab('profile')}>
-                                            <span className="action-icon">📝</span>
-                                            <span>Update Profile</span>
-                                            <p>Keep your records up-to-date</p>
-                                        </button>
-                                    </div>
-                                </section>
+                            <div className="soft-card stat-card">
+                                <div className="stat-icon" style={{ color: 'var(--danger)', background: 'rgba(230, 57, 70, 0.1)' }}>🩸</div>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Blood Type</div>
+                                    <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{userProfile.bloodGroup}</div>
+                                </div>
+                            </div>
+                            <div className="soft-card stat-card">
+                                <div className="stat-icon" style={{ color: 'var(--success)', background: 'rgba(56, 176, 0, 0.1)' }}>⚕️</div>
+                                <div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Primary Clinic</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: '800' }}>Colombo Center</div>
+                                </div>
                             </div>
                         </div>
-                    )}
 
-                    {activeTab === 'prescriptions' && (
-                        <div className="records-container">
-                            <div className="section-header">
-                                <h2>Prescription History</h2>
-                                <p>Detailed records of all medicines prescribed to you</p>
-                            </div>
-
-                            {loading ? (
-                                <div className="pt-loading">
-                                    <div className="loading-spinner"></div>
-                                    <p>Retrieving your records...</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
+                            <div className="soft-card" style={{ padding: '2rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                                    <h3>Recent Prescriptions</h3>
+                                    <button className="btn btn-soft" onClick={() => setActiveTab('prescriptions')}>View All</button>
                                 </div>
-                            ) : prescriptions.length === 0 ? (
-                                <div className="empty-state">
-                                    <div className="empty-icon">📂</div>
-                                    <h3>No prescriptions found</h3>
-                                    <p>Your medical prescriptions will appear here once issued by a doctor.</p>
-                                </div>
-                            ) : (
-                                <div className="pt-prescriptions-grid">
-                                    {prescriptions.map(script => {
-                                        const badge = getStatusBadge(script.status);
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {prescriptions.slice(0, 3).map(p => {
+                                        const badge = getStatusBadge(p.status);
                                         return (
-                                            <div key={script.id} className={`pt-card ${badge.cls}`}>
-                                                <div className="pcard-header">
-                                                    <div className="pcard-id">#{script.id}</div>
-                                                    <span className={`status-badge ${badge.cls}`}>{badge.label}</span>
-                                                </div>
-                                                <div className="pcard-main">
-                                                    <h3 className="med-name">{script.medicineId}</h3>
-                                                    <div className="pcard-info">
-                                                        <div className="info-row">
-                                                            <span className="label">Dosage:</span>
-                                                            <span className="val">{script.dosage}</span>
-                                                        </div>
-                                                        <div className="info-row">
-                                                            <span className="label">Duration:</span>
-                                                            <span className="val">{script.duration}</span>
-                                                        </div>
-                                                        <div className="info-row">
-                                                            <span className="label">Doctor:</span>
-                                                            <span className="val">{script.doctorId || 'Hospital Staff'}</span>
-                                                        </div>
-                                                        {script.instructions && (
-                                                            <div className="info-notes">
-                                                                <p>Note: {script.instructions}</p>
-                                                            </div>
-                                                        )}
+                                            <div key={p.id} className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                    <div className="stat-icon" style={{ width: '40px', height: '40px', fontSize: '1rem' }}>💊</div>
+                                                    <div>
+                                                        <div style={{ fontWeight: '700' }}>{p.medicineName || p.medicineId || 'Unknown Medicine'}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{formatDate(p.createdAt)} • {p.dosage}</div>
                                                     </div>
                                                 </div>
-                                                <div className="pcard-footer">
-                                                    <span>Issued on {formatDate(script.createdAt)}</span>
-                                                </div>
+                                                <span className={`badge ${badge.cls}`}>{badge.label}</span>
                                             </div>
                                         );
                                     })}
+                                    {prescriptions.length === 0 && <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No records yet.</p>}
                                 </div>
-                            )}
-                        </div>
-                    )}
+                            </div>
 
-                    {activeTab === 'profile' && (
-                        <div className="profile-container">
-                            <div className="profile-card">
-                                <div className="profile-header">
-                                    <div className="profile-avatar">R</div>
-                                    <div className="profile-title">
-                                        <h2>{userProfile.name}</h2>
-                                        <p>Patient ID: {userProfile.id}</p>
-                                    </div>
-                                    <button className="edit-profile-btn">Edit Profile</button>
-                                </div>
-                                <div className="profile-grid">
-                                    <div className="info-group">
-                                        <label>Email Address</label>
-                                        <p>{userProfile.email}</p>
-                                    </div>
-                                    <div className="info-group">
-                                        <label>Phone Number</label>
-                                        <p>{userProfile.phone}</p>
-                                    </div>
-                                    <div className="info-group">
-                                        <label>Age</label>
-                                        <p>{userProfile.age} Years</p>
-                                    </div>
-                                    <div className="info-group">
-                                        <label>Blood Group</label>
-                                        <p>{userProfile.bloodGroup}</p>
-                                    </div>
-                                    <div className="info-group full">
-                                        <label>Resident Address</label>
-                                        <p>{userProfile.address}</p>
-                                    </div>
-                                    <div className="info-group full">
-                                        <label>Medical Allergies</label>
-                                        <div className="tag-list">
-                                            {userProfile.allergies.split(',').map(tag => (
-                                                <span key={tag} className="info-tag">{tag.trim()}</span>
-                                            ))}
+                            <div className="soft-card" style={{ padding: '2rem' }}>
+                                <h3>Quick Actions</h3>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+                                    <button className="btn btn-soft" style={{ width: '100%', justifyContent: 'flex-start', padding: '1.5rem' }} onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '700', color: 'var(--primary)', marginBottom: '0.2rem' }}>🤖 Smart Consultation</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Chat with our AI medical assistant</div>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="settings-panel">
-                                <h3>Account Security</h3>
-                                <div className="settings-row">
-                                    <div>
-                                        <p className="setting-name">Two-Factor Authentication</p>
-                                        <p className="setting-desc">Secure your account with 2FA telephony</p>
-                                    </div>
-                                    <button className="toggle-btn">Enable</button>
-                                </div>
-                                <div className="settings-row">
-                                    <div>
-                                        <p className="setting-name">Data Encryption</p>
-                                        <p className="setting-desc">Your medical records are end-to-end encrypted</p>
-                                    </div>
-                                    <span className="status-label verified">Active</span>
+                                    </button>
+                                    <button className="btn btn-soft" style={{ width: '100%', justifyContent: 'flex-start', padding: '1.5rem' }} onClick={() => setActiveTab('profile')}>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '700', marginBottom: '0.2rem' }}>📝 Update Health Profile</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Modify your medical history</div>
+                                        </div>
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
+
+                {activeTab === 'prescriptions' && (
+                    <div className="animate-fade-in soft-card" style={{ padding: '2.5rem' }}>
+                        <div style={{ marginBottom: '2.5rem' }}>
+                            <h2>Medical History & Prescriptions</h2>
+                            <p style={{ color: 'var(--text-secondary)' }}>Full history of your clinical records.</p>
+                        </div>
+
+                        {loading ? (
+                            <div style={{ textAlign: 'center', padding: '4rem' }}>
+                                <div className="stat-icon" style={{ margin: '0 auto 1.5rem', width: '64px', height: '64px' }}>⏳</div>
+                                <p>Loading clinical records...</p>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.5rem' }}>
+                                {prescriptions.map(rx => {
+                                    const badge = getStatusBadge(rx.status);
+                                    return (
+                                        <div key={rx.id} className="soft-card" style={{ padding: '1.5rem', borderTop: `5px solid ${badge.label === 'Pending' ? 'var(--danger)' : 'var(--success)'}` }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.2rem' }}>
+                                                <div className="badge badge-info">ID: #{rx.id}</div>
+                                                <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                                            </div>
+                                            <h3 style={{ color: 'var(--primary)', marginBottom: '1rem' }}>{rx.medicineName || rx.medicineId || 'Unknown Medicine'}</h3>
+                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Dosage:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.dosage || '—'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Duration:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.duration || '—'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Doctor:</span> <strong style={{ color: 'var(--text-main)' }}>{rx.doctorName || rx.doctorId || 'Hospital Staff'}</strong></div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between' }}><span>Prescription ID:</span> <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>#{rx.id}</strong></div>
+                                            </div>
+                                            {rx.instructions && (
+                                                <div style={{ marginTop: '1.2rem', padding: '0.8rem', background: 'var(--primary-soft)', borderRadius: '12px', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                    Note: {rx.instructions}
+                                                </div>
+                                            )}
+                                            <div style={{ marginTop: '1rem', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>🗓 {formatDate(rx.createdAt)}</div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        {prescriptions.length === 0 && !loading && (
+                            <div style={{ textAlign: 'center', padding: '4rem' }}>
+                                <div className="stat-icon" style={{ margin: '0 auto 1.5rem' }}>📂</div>
+                                <h3>No prescriptions found.</h3>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {activeTab === 'profile' && (
+                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
+                        <div className="soft-card" style={{ padding: '2.5rem' }}>
+                            <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '3rem' }}>
+                                <div className="stat-icon" style={{ width: '100px', height: '100px', borderRadius: '50%', fontSize: '3rem', fontWeight: '800' }}>
+                                    {userProfile.name.charAt(0)}
+                                </div>
+                                <div>
+                                    <h2 style={{ fontSize: '2rem' }}>{userProfile.name}</h2>
+                                    <p className="badge badge-info">ID: {userProfile.id}</p>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                <div>
+                                    <label className="form-label">Email</label>
+                                    <div className="soft-card" style={{ padding: '1rem', boxShadow: 'var(--soft-shadow-sm)' }}>{userProfile.email}</div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Phone</label>
+                                    <div className="soft-card" style={{ padding: '1rem', boxShadow: 'var(--soft-shadow-sm)' }}>{userProfile.phone}</div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Age</label>
+                                    <div className="soft-card" style={{ padding: '1rem', boxShadow: 'var(--soft-shadow-sm)' }}>{userProfile.age} Years</div>
+                                </div>
+                                <div>
+                                    <label className="form-label">Blood Group</label>
+                                    <div className="soft-card" style={{ padding: '1rem', fontWeight: '800', color: 'var(--danger)', boxShadow: 'var(--soft-shadow-sm)' }}>{userProfile.bloodGroup}</div>
+                                </div>
+                            </div>
+
+                            <div style={{ marginTop: '2rem' }}>
+                                <label className="form-label">Address</label>
+                                <div className="soft-card" style={{ padding: '1rem', boxShadow: 'var(--soft-shadow-sm)' }}>{userProfile.address}</div>
+                            </div>
+
+                            <div style={{ marginTop: '2rem' }}>
+                                <label className="form-label">Allergies</label>
+                                <div style={{ display: 'flex', gap: '0.8rem', flexWrap: 'wrap' }}>
+                                    {userProfile.allergies.split(',').map(tag => (
+                                        <span key={tag} className="badge badge-danger" style={{ padding: '0.6rem 1rem' }}>{tag.trim()}</span>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="soft-card" style={{ padding: '2rem', height: 'fit-content' }}>
+                            <h3>Security & Access</h3>
+                            <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontWeight: '700' }}>2-Factor Auth</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Off</div>
+                                    </div>
+                                    <button className="btn btn-soft" style={{ padding: '0.5rem 1rem' }}>Enable</button>
+                                </div>
+                                <div className="glass-panel" style={{ padding: '1.2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div>
+                                        <div style={{ fontWeight: '700' }}>Data Privacy</div>
+                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Encrypted</div>
+                                    </div>
+                                    <div className="badge badge-success">On</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </main>
         </div>
     );
