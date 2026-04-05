@@ -5,7 +5,7 @@ import './Login.css';
 
 function Login({ onLogin }) {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Patient');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,17 +17,18 @@ function Login({ onLogin }) {
     setError('');
     
     try {
-      const response = await API.post('/auth/login', { userId, password });
-      const { token, role, fullName } = response.data;
+      const response = await API.post('/auth/login', { username, password });
+      const { token, role, fullName, userId } = response.data;
       
       // Store auth data
       localStorage.setItem('token', token);
       localStorage.setItem('userId', userId);
       localStorage.setItem('role', role);
       localStorage.setItem('fullName', fullName);
+      localStorage.setItem('username', username);
       
       if (onLogin) {
-        onLogin({ username: fullName || userId, role: role });
+        onLogin({ username: fullName || username, role: role });
       }
       
       
@@ -69,15 +70,15 @@ function Login({ onLogin }) {
           {error && <div className="error-message" style={{ color: 'var(--danger)', background: 'rgba(239, 68, 68, 0.1)', padding: '0.8rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.9rem', textAlign: 'center' }}>{error}</div>}
 
           <div className="login-field">
-            <label>UserID</label>
+            <label>Username</label>
             <div className="login-input-wrap">
               <span className="input-icon">👤</span>
               <input
-                id="login-userid"
+                id="login-username"
                 type="text"
-                placeholder="Enter your UserID"
-                value={userId}
-                onChange={e => setUserId(e.target.value)}
+                placeholder="Enter your username"
+                value={username}
+                onChange={e => setUsername(e.target.value)}
                 required
               />
             </div>
