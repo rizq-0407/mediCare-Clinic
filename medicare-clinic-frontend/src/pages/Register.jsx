@@ -29,7 +29,7 @@ export default function Register() {
         role: backendRole 
       });
       
-      alert(`Registration successful! Your System ID is: ${response.data.userId}. Please login using this ID.`);
+      alert(`Registration successful! Your System ID is: ${response.data.userId}. Please login using your username.`);
       navigate('/login');
     } catch (err) {
       console.error("Registration error:", err);
