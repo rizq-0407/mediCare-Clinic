@@ -20,7 +20,7 @@ export default function PatientDashboard() {
         allergies: 'None'
     });
 
-    // userId stored by Login.jsx (e.g. PAT001)
+    // userId stored by Login.jsx
     const patientUserId = localStorage.getItem('userId') || '';
 
     useEffect(() => {
@@ -35,7 +35,6 @@ export default function PatientDashboard() {
     const fetchPrescriptions = async () => {
         try {
             setLoading(true);
-            // Use the patient-specific endpoint with JWT auth
             const response = await API.get(`/prescriptions/patient/${patientUserId}`);
             setPrescriptions(response.data);
             setError(null);
@@ -71,6 +70,7 @@ export default function PatientDashboard() {
                 <div className="float-circle"></div>
                 <div className="float-symbol">☤</div>
             </div>
+
             {/* Sidebar */}
             <aside className="glass-panel" style={{ margin: '1rem', borderRadius: '24px', display: 'flex', flexDirection: 'column', padding: '1.5rem' }}>
                 <div className="logo" style={{ marginBottom: '2.5rem', padding: '0.5rem' }}>
@@ -79,40 +79,35 @@ export default function PatientDashboard() {
                 </div>
 
                 <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', flex: 1 }}>
-                    <button
-                        className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-soft'}`}
-                        onClick={() => setActiveTab('overview')}
-                        style={{ width: '100%', justifyContent: 'flex-start' }}
-                    >
+                    <button className={`btn ${activeTab === 'overview' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('overview')} style={{ width: '100%', justifyContent: 'flex-start' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
                         Overview
                     </button>
-                    <button
-                        className={`btn ${activeTab === 'prescriptions' ? 'btn-primary' : 'btn-soft'}`}
-                        onClick={() => setActiveTab('prescriptions')}
-                        style={{ width: '100%', justifyContent: 'flex-start' }}
-                    >
+                    <button className={`btn ${activeTab === 'prescriptions' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('prescriptions')} style={{ width: '100%', justifyContent: 'flex-start' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
                         Prescriptions
                     </button>
-                    <button
-                        className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-soft'}`}
-                        onClick={() => setActiveTab('profile')}
-                        style={{ width: '100%', justifyContent: 'flex-start' }}
-                    >
+                    <button className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('profile')} style={{ width: '100%', justifyContent: 'flex-start' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         Profile
                     </button>
 
                     <div style={{ height: '1px', background: 'var(--glass-border)', margin: '1rem 0' }} />
 
-                    <button
-                        className="btn btn-soft"
-                        onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}
-                        style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--primary)' }}
-                    >
+                    <button className="btn btn-soft" onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })} style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--primary)' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 8V4H8"></path><rect x="4" y="8" width="16" height="12" rx="2"></rect><path d="M2 14h2"></path><path d="M20 14h2"></path><path d="M15 13v2"></path><path d="M9 13v2"></path></svg>
                         Ask AI Assistant
+                    </button>
+
+                    {/* === BILLING NAVIGATION BUTTON === */}
+                    <button
+                        // Passing the patient ID perfectly via state!
+                        onClick={() => navigate('/patient-billing', { state: { patientId: userProfile.id } })}
+                        className="btn"
+                        style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem', background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: '700', marginTop: '0.5rem' }}
+                    >
+                        <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>💳</span>
+                        Billing & Payments
                     </button>
                 </nav>
 
@@ -197,6 +192,19 @@ export default function PatientDashboard() {
                             <div className="soft-card" style={{ padding: '2rem' }}>
                                 <h3>Quick Actions</h3>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1.5rem' }}>
+
+                                    {/* === QUICK ACTION BILLING BUTTON === */}
+                                    <button
+                                        className="btn btn-soft"
+                                        style={{ width: '100%', justifyContent: 'flex-start', padding: '1.5rem', border: '1px solid #bae6fd', background: '#f0f9ff' }}
+                                        onClick={() => navigate('/patient-billing', { state: { patientId: userProfile.id } })}
+                                    >
+                                        <div style={{ textAlign: 'left' }}>
+                                            <div style={{ fontWeight: '700', color: '#0284c7', marginBottom: '0.2rem' }}>💳 View & Pay Bills</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Access your secure payment portal</div>
+                                        </div>
+                                    </button>
+
                                     <button className="btn btn-soft" style={{ width: '100%', justifyContent: 'flex-start', padding: '1.5rem' }} onClick={() => navigate('/agent-chat', { state: { role: 'patient' } })}>
                                         <div style={{ textAlign: 'left' }}>
                                             <div style={{ fontWeight: '700', color: 'var(--primary)', marginBottom: '0.2rem' }}>🤖 Smart Consultation</div>

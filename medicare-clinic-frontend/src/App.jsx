@@ -11,6 +11,11 @@ import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
 import './index.css';
 
+// === BILLING IMPORTS ===
+import BillingLogin from './pages/BillingLogin';
+import AdminBilling from './pages/AdminBilling';
+import PatientBilling from './pages/PatientBilling';
+
 function App() {
     const [user, setUser] = useState(null);
 
@@ -28,6 +33,7 @@ function App() {
             </div>
             {user && <Navbar user={user} onLogout={handleLogout} />}
             <Routes>
+                {/* ORIGINAL ROUTES */}
                 <Route path="/" element={<Landing />} />
                 <Route path="/login" element={<Login onLogin={setUser} />} />
                 <Route path="/register" element={<Register />} />
@@ -37,6 +43,13 @@ function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/doctor" element={<DoctorDashboard user={user} />} />
                 <Route path="/agent-chat" element={<AgentChat />} />
+
+                {/* === NEW BILLING ROUTES === */}
+                <Route path="/billing-login" element={<BillingLogin />} />
+                <Route path="/admin-billing" element={<AdminBilling />} />
+                <Route path="/patient-billing" element={<PatientBilling />} />
+
+                {/* FALLBACK ROUTE (Must stay at the absolute bottom!) */}
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         </Router>
