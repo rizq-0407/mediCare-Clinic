@@ -39,14 +39,15 @@ public class AgentController {
         String patientId = body.getOrDefault("patientId", null);
         String role = body.getOrDefault("role", "patient");
 
-        // Only pharmacists and admins get pharmacy agent access
-        boolean isPharmacist = "pharmacist".equalsIgnoreCase(role) || "admin".equalsIgnoreCase(role);
+        // Normalise role check — frontend sends mixed case (PHARMACY, pharmacist, ADMIN, admin)
+        String roleUpper = role != null ? role.toUpperCase() : "PATIENT";
+        boolean isPharmacist = roleUpper.equals("PHARMACY") || roleUpper.equals("ADMIN") || roleUpper.equals("PHARMACIST");
 
         // Route to the correct agent
-        String agentResponse = orchestrator.route(userMessage, sessionId, patientId, isPharmacist);
+        String agentResponse = orchestrator.route(userMessage, sessionId, patientId, roleUpper);
 
         // Detect which agent handled it (for frontend badge display)
-        String agentName = orchestrator.detectAgentName(userMessage, sessionId, isPharmacist);
+        String agentName = orchestrator.detectAgentName(userMessage, sessionId, roleUpper);
 
         return ResponseEntity.ok(Map.of(
                 "response", agentResponse,

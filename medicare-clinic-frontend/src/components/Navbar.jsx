@@ -55,8 +55,11 @@ export default function Navbar({ user, onLogout }) {
           </>
         ) : (
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+            <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
               Login
+            </Link>
+            <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+              Register
             </Link>
           </div>
         )}

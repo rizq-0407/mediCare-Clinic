@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import PrescriptionForm from '../components/PrescriptionForm';
 
@@ -160,6 +161,8 @@ export default function DoctorDashboard({ user }) {
     { id: 'my-prescriptions',  icon: '📋', label: 'My Prescriptions' },
   ];
 
+  const navigate = useNavigate();
+
   return (
     <div className="dashboard-layout animate-fade-in">
       <div className="bg-decor-container">
@@ -198,6 +201,19 @@ export default function DoctorDashboard({ user }) {
             </button>
           ))}
         </nav>
+
+        {/* AI Assistant shortcut */}
+        <button
+          className="btn btn-soft"
+          style={{
+            marginTop: '1rem', width: '100%', justifyContent: 'flex-start',
+            gap: '0.8rem', background: 'rgba(16,185,129,0.08)',
+            color: '#10b981', border: '1px solid rgba(16,185,129,0.2)'
+          }}
+          onClick={() => navigate('/agent-chat', { state: { role: 'doctor', patientId: doctorUserId } })}
+        >
+          🤖 AI Assistant
+        </button>
 
         <div className="glass-panel" style={{ marginTop: 'auto', padding: '1rem', borderRadius: '16px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Logged in as</div>

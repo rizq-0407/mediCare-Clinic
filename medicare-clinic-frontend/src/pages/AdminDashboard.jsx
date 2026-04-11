@@ -199,6 +199,18 @@ export default function AdminDashboard() {
               <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>☤</span>
               Global Billing
             </button>
+
+            {/* AI Agent shortcut */}
+            <button
+              onClick={() => navigate('/agent-chat', { state: { role: 'admin' } })}
+              className="btn btn-soft"
+              style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem',
+                background: 'rgba(139,92,246,0.08)', color: '#8b5cf6',
+                border: '1px solid rgba(139,92,246,0.2)', fontWeight: '700', marginTop: '0.5rem' }}
+            >
+              <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>🤖</span>
+              AI Pharmacy Agent
+            </button>
           </nav>
 
           <div className="glass-panel" style={{ marginTop: 'auto', padding: '1rem', borderRadius: '16px' }}>
