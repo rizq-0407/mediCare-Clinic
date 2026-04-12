@@ -13,6 +13,8 @@ export default function AdminDashboard() {
     username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR'
   });
   const [empIsLoading, setEmpIsLoading] = useState(false);
+  const [isEditingEmployee, setIsEditingEmployee] = useState(false);
+  const [editingEmployeeId, setEditingEmployeeId] = useState(null);
 
   // Form State
   const [isEditing, setIsEditing] = useState(false);
@@ -25,6 +27,11 @@ export default function AdminDashboard() {
     roomNumber: 'Room 101',
     availableSlots: 0
   });
+
+  // Bulk Scheduling States
+  const [isBulk, setIsBulk] = useState(false);
+  const [bulkEndDate, setBulkEndDate] = useState('');
+  const [selectedDays, setSelectedDays] = useState([]);
 
   const formatAMPM = (time24) => {
     if (!time24) return '';
@@ -96,19 +103,39 @@ export default function AdminDashboard() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      if (isEditing) {
+      if (isBulk) {
+        // Bulk Scheduling Logic
+        const bulkData = {
+          ...formData,
+          startDate: formData.date, // use existing 'date' field as start
+          endDate: bulkEndDate,
+          daysOfWeek: selectedDays
+        };
+        if (!bulkEndDate || selectedDays.length === 0) {
+          alert("Please select an End Date and at least one Day of the Week.");
+          return;
+        }
+        await API.post('/schedules/bulk', bulkData);
+        alert("Bulk schedules created successfully!");
+      } else if (isEditing) {
         await API.put(`/schedules/${currentId}`, formData);
       } else {
         await API.post('/schedules', formData);
       }
 
       setFormData({ doctorName: '', specialization: 'General', date: '', time: '', roomNumber: 'Room 101', availableSlots: 0 });
+      setBulkEndDate('');
+      setSelectedDays([]);
+      setIsBulk(false);
       setIsEditing(false);
       setCurrentId(null);
       fetchSchedules();
     } catch (err) {
       if (!err.response) {
-        if (isEditing) {
+        // Fallback for mock/offline testing
+        if (isBulk) {
+          alert("Bulk mode successfully simulated!");
+        } else if (isEditing) {
           setSchedules(prev => prev.map(s => s.id === currentId ? { ...formData, id: currentId } : s));
         } else {
           setSchedules(prev => [...prev, { ...formData, id: Date.now() }]);
@@ -170,6 +197,27 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleEditUser = (user) => {
+    setEmpFormData({
+      username: user.username,
+      password: '', // Password is not editable in this form
+      email: user.email || '',
+      fullName: user.fullName || '',
+      contactNumber: user.contactNumber || '',
+      role: user.role || 'DOCTOR'
+    });
+    setIsEditingEmployee(true);
+    setEditingEmployeeId(user.id);
+    setActiveTab('register'); // Switch to form tab
+  };
+
+  const handleCancelUserEdit = () => {
+    setIsEditingEmployee(false);
+    setEditingEmployeeId(null);
+    setEmpFormData({ username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR' });
+    setActiveTab('users');
+  };
+
   const handleApproveRequest = async (id) => {
     try {
       await API.put(`/schedules/${id}/approve`);
@@ -212,12 +260,18 @@ export default function AdminDashboard() {
     e.preventDefault();
     setEmpIsLoading(true);
     try {
-      const response = await API.post('/auth/register-employee', empFormData);
-      alert(`Registration successful! Generated System ID for login is: ${response.data.userId}`);
-      setEmpFormData({ username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR' });
+      if (isEditingEmployee) {
+        await API.put(`/users/${editingEmployeeId}`, empFormData);
+        alert("Employee information updated successfully!");
+        handleCancelUserEdit();
+      } else {
+        const response = await API.post('/auth/register-employee', empFormData);
+        alert(`Registration successful! Generated System ID for login is: ${response.data.userId}`);
+        setEmpFormData({ username: '', password: '', email: '', fullName: '', contactNumber: '', role: 'DOCTOR' });
+      }
       fetchUsers();
     } catch (err) {
-      alert(err.response?.data?.message || "Employee registration failed.");
+      alert(err.response?.data?.message || err.response?.data || "Operation failed.");
     } finally {
       setEmpIsLoading(false);
     }
@@ -344,12 +398,12 @@ export default function AdminDashboard() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Current</div>
-                                <div style={{ fontWeight: '600' }}>{formatAMPM(schedule.time)} | {schedule.roomNumber}</div>
+                                <div style={{ fontWeight: '600' }}>{schedule.date} | {formatAMPM(schedule.time)} | {schedule.roomNumber}</div>
                               </div>
                               <div style={{ color: 'var(--warning)' }}>➜</div>
                               <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Requested</div>
-                                <div style={{ fontWeight: '600', color: 'var(--secondary)' }}>{formatAMPM(schedule.requestedTime)} | {schedule.requestedRoom}</div>
+                                <div style={{ fontWeight: '600', color: 'var(--secondary)' }}>{schedule.requestedDate} | {formatAMPM(schedule.requestedTime)} | {schedule.requestedRoom}</div>
                               </div>
                             </div>
                             <div style={{ display: 'flex', gap: '0.8rem' }}>
@@ -372,6 +426,19 @@ export default function AdminDashboard() {
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>Set up clinical availability</p>
 
                 <form onSubmit={handleSubmit}>
+                  {!isEditing && (
+                    <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.8rem', padding: '0.8rem', background: 'var(--primary-soft)', borderRadius: '12px' }}>
+                      <input 
+                        type="checkbox" 
+                        id="bulkToggle" 
+                        checked={isBulk} 
+                        onChange={(e) => setIsBulk(e.target.checked)} 
+                        style={{ width: '18px', height: '18px', accentColor: 'var(--primary)' }}
+                      />
+                      <label htmlFor="bulkToggle" style={{ fontWeight: '700', fontSize: '0.9rem', cursor: 'pointer' }}>Enable Weekly Bulk Mode</label>
+                    </div>
+                  )}
+
                   <div className="form-group">
                     <label className="form-label">Doctor Username</label>
                     <input type="text" className="form-input" name="doctorName" value={formData.doctorName} onChange={handleInputChange} required placeholder="Dr. Name" />
@@ -390,14 +457,50 @@ export default function AdminDashboard() {
 
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="form-group">
-                      <label className="form-label">Date</label>
+                      <label className="form-label">{isBulk ? 'Start Date' : 'Date'}</label>
                       <input type="date" className="form-input" name="date" value={formData.date} onChange={handleInputChange} required />
                     </div>
-                    <div className="form-group">
-                      <label className="form-label">Time</label>
-                      <input type="time" className="form-input" name="time" value={formData.time} onChange={handleInputChange} required />
-                    </div>
+                    {isBulk ? (
+                      <div className="form-group">
+                        <label className="form-label">End Date</label>
+                        <input type="date" className="form-input" value={bulkEndDate} onChange={(e) => setBulkEndDate(e.target.value)} required />
+                      </div>
+                    ) : (
+                      <div className="form-group">
+                        <label className="form-label">Time</label>
+                        <input type="time" className="form-input" name="time" value={formData.time} onChange={handleInputChange} required />
+                      </div>
+                    )}
                   </div>
+
+                  {isBulk && (
+                    <>
+                      <div className="form-group">
+                        <label className="form-label">Time</label>
+                        <input type="time" className="form-input" name="time" value={formData.time} onChange={handleInputChange} required />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Repeat on these days:</label>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map(day => (
+                            <button
+                              key={day}
+                              type="button"
+                              className={`btn ${selectedDays.includes(day) ? 'btn-primary' : 'btn-soft'}`}
+                              style={{ padding: '0.4rem 0.6rem', fontSize: '0.75rem', borderRadius: '8px' }}
+                              onClick={() => {
+                                setSelectedDays(prev => 
+                                  prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]
+                                );
+                              }}
+                            >
+                              {day.substring(0, 3)}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="form-group">
                     <label className="form-label">Consultation Room</label>
@@ -405,6 +508,8 @@ export default function AdminDashboard() {
                       <option value="Room 101">Room 101</option>
                       <option value="Room 102">Room 102</option>
                       <option value="Room 103">Room 103</option>
+                      <option value="Room 104">Room 104</option>
+                      <option value="Room 105">Room 105</option>
                     </select>
                   </div>
 
@@ -442,7 +547,7 @@ export default function AdminDashboard() {
                 <div className="stat-icon" style={{ background: 'rgba(56, 176, 0, 0.1)' }}>🩺</div>
                 <div>
                   <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Doctors</div>
-                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{users.filter(u => u.role === 'Doctor').length}</div>
+                  <div style={{ fontSize: '1.5rem', fontWeight: '800' }}>{users.filter(u => u.role === 'DOCTOR').length}</div>
                 </div>
               </div>
             </div>
@@ -451,30 +556,63 @@ export default function AdminDashboard() {
               <h3>Personnel Directory</h3>
               <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Manage system access for all registered users.</p>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                {users.map(user => (
-                  <div key={user.id} className="soft-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                      <div className="stat-icon" style={{ width: '48px', height: '48px', borderRadius: '50%', fontSize: '1.2rem' }}>
-                        {(user.username || 'U').charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={{ fontWeight: '700' }}>{user.username || user.id || 'Unknown User'}</div>
-                        <span className={`badge ${user.role === 'ADMIN' ? 'badge-danger' : user.role === 'DOCTOR' ? 'badge-success' : 'badge-info'}`}>
-                          {user.role}
-                        </span>
-                      </div>
-                    </div>
-
-                    <button
-                      className="btn btn-soft"
-                      style={{ padding: '0.5rem', color: 'var(--danger)' }}
-                      onClick={() => handleDeleteUser(user.id, user.username)}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                  </div>
-                ))}
+              <div className="table-responsive">
+                <table className="custom-table" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr style={{ textAlign: 'left', borderBottom: '1px solid var(--primary-soft)' }}>
+                      <th style={{ padding: '1rem' }}>User / Full Name</th>
+                      <th style={{ padding: '1rem' }}>Role</th>
+                      <th style={{ padding: '1rem' }}>Email / Contact</th>
+                      <th style={{ padding: '1rem', textAlign: 'right' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map(user => (
+                      <tr key={user.id} style={{ borderBottom: '1px solid var(--primary-soft)' }}>
+                        <td style={{ padding: '1.2rem 1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div className="stat-icon" style={{ width: '40px', height: '40px', borderRadius: '50%', fontSize: '1rem', flexShrink: 0 }}>
+                              {(user.fullName || user.username || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: '700' }}>{user.fullName || 'No Full Name'}</div>
+                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>@{user.username}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <span className={`badge ${user.role === 'ADMIN' ? 'badge-danger' : user.role === 'DOCTOR' ? 'badge-success' : 'badge-info'}`}>
+                            {user.role}
+                          </span>
+                        </td>
+                        <td style={{ padding: '1rem' }}>
+                          <div style={{ fontSize: '0.9rem' }}>{user.email || '—'}</div>
+                          <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{user.contactNumber || '—'}</div>
+                        </td>
+                        <td style={{ padding: '1rem', textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <button
+                              className="btn btn-soft"
+                              style={{ padding: '0.5rem' }}
+                              onClick={() => handleEditUser(user)}
+                              title="Edit User"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button
+                              className="btn btn-soft"
+                              style={{ padding: '0.5rem', color: 'var(--danger)' }}
+                              onClick={() => handleDeleteUser(user.id, user.username)}
+                              title="Delete User"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -483,8 +621,8 @@ export default function AdminDashboard() {
           <div className="animate-fade-in" style={{ maxWidth: '600px', margin: '0 auto' }}>
             <div className="soft-card" style={{ padding: '2.5rem' }}>
               <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>Register New Personnel</h2>
-                <p style={{ color: 'var(--text-secondary)' }}>Create access accounts for doctors, staff, and admins</p>
+                <h2 style={{ fontSize: '1.8rem', marginBottom: '0.5rem' }}>{isEditingEmployee ? 'Edit Personnel Member' : 'Register New Personnel'}</h2>
+                <p style={{ color: 'var(--text-secondary)' }}>{isEditingEmployee ? `Modifying profile for @${empFormData.username}` : 'Create access accounts for doctors, staff, and admins'}</p>
               </div>
 
               <form onSubmit={handleEmployeeRegistration}>
@@ -495,7 +633,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="form-group">
                     <label className="form-label">System Username</label>
-                    <input type="text" className="form-input" name="username" value={empFormData.username} onChange={handleEmpInputChange} required placeholder="janedoe" />
+                    <input type="text" className="form-input" name="username" value={empFormData.username} onChange={handleEmpInputChange} required placeholder="janedoe" disabled={isEditingEmployee} />
                   </div>
                 </div>
 
@@ -520,14 +658,23 @@ export default function AdminDashboard() {
                   </div>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Initial Password</label>
-                  <input type="password" className="form-input" name="password" value={empFormData.password} onChange={handleEmpInputChange} required placeholder="Create secure password" />
-                </div>
+                {!isEditingEmployee && (
+                  <div className="form-group">
+                    <label className="form-label">Initial Password</label>
+                    <input type="password" className="form-input" name="password" value={empFormData.password} onChange={handleEmpInputChange} required placeholder="Create secure password" />
+                  </div>
+                )}
 
-                <button type="submit" className={`btn btn-primary ${empIsLoading ? 'loading' : ''}`} style={{ width: '100%', marginTop: '1.5rem', padding: '1rem', fontSize: '1rem' }} disabled={empIsLoading}>
-                  {empIsLoading ? 'Registering...' : 'Register Employee & Generate ID'}
-                </button>
+                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.5rem' }}>
+                  <button type="submit" className={`btn btn-primary ${empIsLoading ? 'loading' : ''}`} style={{ flex: 1, padding: '1rem', fontSize: '1rem' }} disabled={empIsLoading}>
+                    {empIsLoading ? (isEditingEmployee ? 'Saving...' : 'Registering...') : (isEditingEmployee ? 'Save Changes' : 'Register Employee & Generate ID')}
+                  </button>
+                  {isEditingEmployee && (
+                    <button type="button" className="btn btn-soft" onClick={handleCancelUserEdit} style={{ flex: 0.4 }}>
+                      Cancel
+                    </button>
+                  )}
+                </div>
               </form>
             </div>
           </div>
