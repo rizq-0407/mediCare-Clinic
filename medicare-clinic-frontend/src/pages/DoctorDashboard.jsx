@@ -126,6 +126,15 @@ export default function DoctorDashboard({ user }) {
     }
   };
 
+  const handleDismissResponse = async (id) => {
+    try {
+      await API.put(`/schedules/${id}/dismiss-response`);
+      fetchSchedules();
+    } catch (err) {
+      console.error('Failed to dismiss response:', err);
+    }
+  };
+
   // ── prescription handler ───────────────────────────────────────────────
   const handleCreatePrescription = async (formData) => {
     const payload = {
@@ -264,9 +273,21 @@ export default function DoctorDashboard({ user }) {
                       background: schedule.adminResponse.startsWith('Success') ? 'rgba(56, 176, 0, 0.05)' : 'rgba(230, 57, 70, 0.05)',
                       border: `1px solid ${schedule.adminResponse.startsWith('Success') ? 'var(--success)' : 'var(--danger)'}`,
                       color: schedule.adminResponse.startsWith('Success') ? 'var(--success)' : 'var(--danger)',
-                      fontSize: '0.85rem'
+                      fontSize: '0.85rem',
+                      position: 'relative',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: '0.8rem'
                     }}>
-                      {schedule.adminResponse}
+                      <span>{schedule.adminResponse}</span>
+                      <button 
+                        onClick={() => handleDismissResponse(schedule.id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
+                        title="Dismiss"
+                      >
+                        ✕
+                      </button>
                     </div>
                   )}
 
