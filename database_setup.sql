@@ -222,11 +222,17 @@ DELIMITER ;
 -- =============================================
 
 -- Patients (password: 'password123' — bcrypt hashed)
-INSERT INTO users (username, userId, password, email, fullName, contactNumber) VALUES
-('johndoe',   'PAT001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'john@gmail.com', 'John Doe',   '5550101'),
-('janesmith', 'PAT002', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'jane@gmail.com', 'Jane Smith',  '5550102');
+INSERT INTO users (username, userId, password, email, fullName, contactNumber, role) VALUES
+('johndoe',   'PAT001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'john@gmail.com', 'John Doe',   '5550101', 'PATIENT'),
+('janesmith', 'PAT002', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'jane@gmail.com', 'Jane Smith',  '5550102', 'PATIENT');
 
--- Employees (password: 'password123' — bcrypt hashed)
+-- Admin and Employees (Added to 'users' table for Authentication)
+INSERT INTO users (username, userId, password, email, fullName, contactNumber, role) VALUES
+('admin',      'ADM001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'admin@medicare.com',  'System Admin',      '5550001', 'ADMIN'),
+('drjames',    'DOC001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'james@medicare.com',  'Dr. James Wilson',  '5550002', 'DOCTOR'),
+('pharma_one', 'PHM001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'store@medicare.com',  'Sarah Pharma',      '5550003', 'PHARMACY');
+
+-- Employees (Doctors, Pharmacists, Admins, Staff - Keep duplicate for specialty/salary data)
 INSERT INTO employees (username, employeeId, password, email, fullName, role, specialty) VALUES
 ('admin',      'ADM001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'admin@medicare.com',  'System Admin',      'ADMIN',    NULL),
 ('drjames',    'DOC001', '$2a$10$8.UnVuG9HHgffUDAlk8Kn.2NvS.X.e45607k4bHh799n8Z6M6.b0y', 'james@medicare.com',  'Dr. James Wilson',  'DOCTOR',   'Cardiology'),
