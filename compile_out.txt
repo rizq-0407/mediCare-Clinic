@@ -1,0 +1,23 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ------------------------< com.medicare:clinic >-------------------------
+[INFO] Building MediCareClinic 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- clean:3.3.2:clean (default-clean) @ clinic ---
+[INFO] Deleting C:\Users\User\Downloads\mediCare-Clinic\target
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ clinic ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ clinic ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 37 source files with javac [debug release 17] to target\classes
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.920 s
+[INFO] Finished at: 2026-04-03T00:08:32+05:30
+[INFO] ------------------------------------------------------------------------

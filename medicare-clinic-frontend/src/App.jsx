@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Pharmacy from "./pages/Pharmacy";
 import Login from "./pages/Login";
 import AgentChat from "./pages/AgentChat";
@@ -7,14 +7,35 @@ import PatientDashboard from "./pages/PatientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
 import Register from "./pages/Register";
+<<<<<<< HEAD
 import Landing from "./pages/Landing";
+=======
+import EmrDashboard from "./pages/EmrDashboard";
+import EmrFormPage from "./pages/EmrFormPage";
+>>>>>>> 45e23be (“emr”)
 import Navbar from "./components/Navbar";
 import './index.css';
 
 function App() {
     const [user, setUser] = useState(null);
 
+    // Restore user session from sessionStorage on page load/refresh
+    useEffect(() => {
+        const token = sessionStorage.getItem("token");
+        if (token) {
+            setUser({
+                username: sessionStorage.getItem("username") || "",
+                userId: sessionStorage.getItem("userId") || "",
+                role: sessionStorage.getItem("role") || "",
+                fullName: sessionStorage.getItem("fullName") || "",
+                token: token,
+            });
+        }
+    }, []);
+
     const handleLogout = () => {
+        // Clear all auth data from sessionStorage
+        sessionStorage.clear();
         setUser(null);
     };
 
@@ -37,6 +58,9 @@ function App() {
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/doctor" element={<DoctorDashboard user={user} />} />
                 <Route path="/agent-chat" element={<AgentChat />} />
+                {/* EMR Routes */}
+                <Route path="/emr" element={<EmrDashboard />} />
+                <Route path="/emr/new" element={<EmrFormPage />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
         </Router>
