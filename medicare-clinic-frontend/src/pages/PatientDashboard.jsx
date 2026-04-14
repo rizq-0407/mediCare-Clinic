@@ -8,7 +8,15 @@ export default function PatientDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    const [schedules, setSchedules] = useState([]);
+    const [bookingLoading, setBookingLoading] = useState(false);
     const [toastMsg, setToastMsg] = useState(null);
+
+    // Search Filters
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchSpecialization, setSearchSpecialization] = useState('Any Specialization');
+    const [searchDate, setSearchDate] = useState('');
+
     const [userProfile, setUserProfile] = useState({
         name: localStorage.getItem('fullName') || 'Unknown Patient',
         id: localStorage.getItem('userId') || 'PAT001',
@@ -25,7 +33,52 @@ export default function PatientDashboard() {
 
     useEffect(() => {
         fetchPrescriptions();
+        fetchSchedules();
     }, []);
+
+    const fetchSchedules = async () => {
+        try {
+            const response = await API.get('/schedules');
+            // Show only schedules with available slots
+            setSchedules(response.data.filter(s => s.availableSlots > 0));
+        } catch (err) {
+            console.error('Failed to fetch schedules:', err);
+        }
+    };
+
+    const handleSearch = async (e) => {
+        if (e) e.preventDefault();
+        try {
+            setLoading(true);
+            const params = new URLSearchParams();
+            if (searchTerm) params.append('doctor', searchTerm);
+            if (searchSpecialization && searchSpecialization !== 'Any Specialization') params.append('specialization', searchSpecialization);
+            if (searchDate) params.append('date', searchDate);
+
+            const response = await API.get(`/schedules/search?${params.toString()}`);
+            setSchedules(response.data.filter(s => s.availableSlots > 0));
+            // Switch to show results if not already there
+            setActiveTab('booking');
+        } catch (err) {
+            console.error('Search failed:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleBookAppointment = async (scheduleId) => {
+        try {
+            setBookingLoading(true);
+            // Calling the backend booking endpoint
+            await API.post(`/schedules/book/${scheduleId}?patientId=${patientUserId}`);
+            showToast('✅ Appointment booked successfully!');
+            fetchSchedules(); // Refresh slots
+        } catch (err) {
+            alert('Booking failed: ' + (err.response?.data || err.message));
+        } finally {
+            setBookingLoading(false);
+        }
+    };
 
     const showToast = (msg, type = 'success') => {
         setToastMsg({ text: msg, type });
@@ -90,6 +143,14 @@ export default function PatientDashboard() {
                     <button className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('profile')} style={{ width: '100%', justifyContent: 'flex-start' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         Profile
+                    </button>
+                    <button
+                        className={`btn ${activeTab === 'booking' ? 'btn-primary' : 'btn-soft'}`}
+                        onClick={() => setActiveTab('booking')}
+                        style={{ width: '100%', justifyContent: 'flex-start' }}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        Book Appointment
                     </button>
 
                     <div style={{ height: '1px', background: 'var(--glass-border)', margin: '1rem 0' }} />
@@ -219,6 +280,146 @@ export default function PatientDashboard() {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'booking' && (
+                    <div className="animate-fade-in">
+                        {/* 🏥 CHANNEL YOUR DOCTOR - COMPACT SEARCH BAR */}
+                        <div className="soft-card" style={{ maxWidth: '1000px', margin: '0 auto 2.5rem', padding: '1.2rem 2rem', boxShadow: '0 12px 30px rgba(0,119,182,0.08)', borderRadius: '24px', border: '1px solid rgba(0,119,182,0.1)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                <div style={{ minWidth: '160px' }}>
+                                    <h2 style={{ fontSize: '1.4rem', color: 'var(--primary)', fontWeight: '800', margin: 0, letterSpacing: '-0.5px' }}>Channel Doctor</h2>
+                                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: 0 }}>Find clinical sessions</p>
+                                </div>
+
+                                <form onSubmit={handleSearch} style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                    <div className="glass-panel" style={{ flex: 1.2, display: 'flex', alignItems: 'center', padding: '0.6rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.6)', minWidth: '220px', border: '1px solid rgba(0,119,182,0.1)' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.8rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Doctor Name..." 
+                                            className="form-input" 
+                                            style={{ border: 'none', padding: '0', fontSize: '0.95rem', background: 'transparent', width: '100%', outline: 'none', fontWeight: '600' }}
+                                            value={searchTerm}
+                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                            maxLength={20}
+                                        />
+                                    </div>
+
+                                    <div className="glass-panel" style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0.6rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.6)', minWidth: '180px', border: '1px solid rgba(0,119,182,0.1)' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.8rem' }}><path d="M22 12h-4l-3 9L9 3l-3 9H2"></path></svg>
+                                        <select 
+                                            className="form-input" 
+                                            style={{ border: 'none', padding: '0', fontSize: '0.95rem', background: 'transparent', flex: 1, outline: 'none', fontWeight: '600', cursor: 'pointer' }}
+                                            value={searchSpecialization}
+                                            onChange={(e) => setSearchSpecialization(e.target.value)}
+                                        >
+                                            <option value="Any Specialization">Any Specialization</option>
+                                            <option value="General">General Physician</option>
+                                            <option value="Cardiologist">Cardiologist</option>
+                                            <option value="Dermatologist">Dermatologist</option>
+                                            <option value="Neurologist">Neurologist</option>
+                                            <option value="Pediatrician">Pediatrician</option>
+                                        </select>
+                                    </div>
+
+                                    <div className="glass-panel" style={{ flex: 0.8, display: 'flex', alignItems: 'center', padding: '0.6rem 1.2rem', borderRadius: '14px', background: 'rgba(255,255,255,0.6)', minWidth: '160px', border: '1px solid rgba(0,119,182,0.1)' }}>
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '0.8rem' }}><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                        <input 
+                                            type="date" 
+                                            className="form-input" 
+                                            style={{ border: 'none', padding: '0', fontSize: '0.95rem', background: 'transparent', flex: 1, color: searchDate ? 'var(--text-main)' : 'var(--text-secondary)', outline: 'none', fontWeight: '600' }}
+                                            value={searchDate}
+                                            onChange={(e) => setSearchDate(e.target.value)}
+                                        />
+                                    </div>
+
+                                    <button type="submit" className="btn btn-primary" style={{ padding: '0.8rem 1.8rem', fontSize: '1rem', background: 'var(--primary)', borderRadius: '14px', boxShadow: '0 8px 16px rgba(14, 165, 233, 0.2)' }}>
+                                        Search
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        {/* 📅 RESULTS LIST - SESSION VIEW */}
+                        <div>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid var(--primary-soft)', paddingBottom: '0.8rem', marginBottom: '1.5rem' }}>
+                                <h3>{schedules.length} Available Sessions Found</h3>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>MEDI-CARE COLOMBO CENTER SESSIONS</p>
+                            </div>
+
+                            {schedules.length === 0 ? (
+                                <div className="soft-card" style={{ padding: '4rem', textAlign: 'center' }}>
+                                    <div className="stat-icon" style={{ margin: '0 auto 1.5rem', background: 'var(--primary-soft)' }}>
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    </div>
+                                    <h3 style={{ color: 'var(--text-secondary)' }}>No matching sessions currently available.</h3>
+                                    <p>Try broadening your search criteria.</p>
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', background: 'var(--primary-soft)', border: '1px solid var(--primary-soft)', borderRadius: '16px', overflow: 'hidden' }}>
+                                    {schedules.map(s => (
+                                        <div key={s.id} className="glass-panel" style={{ padding: '1.5rem 2rem', borderRadius: '0', display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) 1.5fr 1fr 1fr 1fr', alignItems: 'center', gap: '2rem', background: '#fff' }}>
+                                            
+                                            {/* Doctor Info */}
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div style={{ width: '40px', height: '40px', background: 'var(--primary-soft)', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><polyline points="17 11 19 13 23 9"></polyline></svg>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '1.1rem', fontWeight: '800', color: 'var(--primary)', marginBottom: '0.1rem' }}>Dr. {s.doctorName}</div>
+                                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '700', letterSpacing: '0.5px' }}>{s.specialization.toUpperCase()}</div>
+                                                </div>
+                                            </div>
+
+                                            {/* Session Date & Time */}
+                                            <div>
+                                                <div style={{ fontSize: '1rem', fontWeight: '700', color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                                                    {new Date(s.date).toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()}
+                                                </div>
+                                                <div style={{ fontSize: '1.3rem', fontWeight: '800', color: 'var(--text-main)', marginTop: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                                   {new Date('2024-01-01T' + (s.time.length === 5 ? s.time : s.time.substring(0,5))).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase()}
+                                                </div>
+                                            </div>
+
+                                            {/* Appointments Stats */}
+                                            <div style={{ textAlign: 'center' }}>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', fontWeight: '800', textTransform: 'uppercase', marginBottom: '0.4rem' }}>Available Slots</div>
+                                                <div style={{ fontSize: '1.6rem', fontWeight: '900', color: 'var(--primary)' }}>
+                                                    {s.availableSlots < 10 ? `0${s.availableSlots}` : s.availableSlots}
+                                                </div>
+                                            </div>
+
+                                            {/* Booking Action */}
+                                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                                                <button 
+                                                    className="btn btn-primary" 
+                                                    style={{ background: 'var(--primary)', padding: '0.7rem 1.6rem', borderRadius: '12px', boxShadow: '0 8px 16px rgba(14, 165, 233, 0.25)' }}
+                                                    disabled={bookingLoading}
+                                                    onClick={() => handleBookAppointment(s.id)}
+                                                >
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                                        Book
+                                                    </span>
+                                                </button>
+                                            </div>
+
+                                            {/* Status Badge */}
+                                            <div style={{ textAlign: 'right' }}>
+                                                <span className={`badge ${s.availableSlots > 0 ? 'badge-info' : 'badge-danger'}`} style={{ fontSize: '0.7rem' }}>
+                                                    {s.availableSlots > 0 ? 'Open' : 'Full'}
+                                                </span>
+                                            </div>
+
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

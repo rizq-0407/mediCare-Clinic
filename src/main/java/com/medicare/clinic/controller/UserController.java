@@ -48,4 +48,27 @@ public class UserController {
                 ))
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Returns all registered users in the system.
+     */
+    @GetMapping
+    public List<User> getAllUsers() {
+        return userRepository.findAll();
+    }
+
+    /**
+     * Updates an existing user's details (Name, Email, Contact, Role).
+     */
+    @PutMapping("/{id}")
+    public org.springframework.http.ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userData) {
+        User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+        
+        user.setFullName(userData.getFullName());
+        user.setEmail(userData.getEmail());
+        user.setContactNumber(userData.getContactNumber());
+        user.setRole(userData.getRole());
+
+        return org.springframework.http.ResponseEntity.ok(userRepository.save(user));
+    }
 }
