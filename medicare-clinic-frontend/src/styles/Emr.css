@@ -1,0 +1,439 @@
+/* ====================================================
+   EMR Module Styles
+   ==================================================== */
+
+/* Container */
+.emr-container {
+    min-height: 100vh;
+    background: var(--bg-main, #f0f4f8);
+    padding: 2rem;
+    font-family: 'Inter', sans-serif;
+}
+
+/* Header */
+.emr-header {
+    margin-bottom: 2rem;
+}
+
+.emr-header h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--primary, #4361ee), var(--secondary, #3a0ca3));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.3rem;
+}
+
+.emr-header p {
+    color: var(--text-secondary, #6b7280);
+    font-size: 0.95rem;
+}
+
+/* Controls bar */
+.emr-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.emr-search-bar {
+    flex: 1;
+    min-width: 240px;
+    padding: 0.7rem 1rem;
+    border: 1.5px solid var(--glass-border, #e2e8f0);
+    border-radius: 12px;
+    font-size: 0.9rem;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.emr-search-bar:focus {
+    border-color: var(--primary, #4361ee);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+/* Buttons */
+.btn-primary {
+    background: linear-gradient(135deg, #4361ee, #3a0ca3);
+    color: white;
+    border: none;
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(67, 97, 238, 0.35);
+    opacity: 0.93;
+}
+
+.btn-secondary {
+    background: white;
+    color: var(--primary, #4361ee);
+    border: 1.5px solid var(--primary, #4361ee);
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-secondary:hover {
+    background: rgba(67, 97, 238, 0.06);
+    transform: translateY(-1px);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444, #b91c1c);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-danger:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+}
+
+.btn-edit {
+    background: rgba(67, 97, 238, 0.1);
+    color: var(--primary, #4361ee);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit:hover {
+    background: rgba(67, 97, 238, 0.18);
+    transform: translateY(-1px);
+}
+
+/* Records Section */
+.records-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.records-section h2 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+    margin-bottom: 1.5rem;
+}
+
+/* Record Table */
+.emr-table-wrapper {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+
+.emr-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.emr-table thead {
+    background: linear-gradient(135deg, rgba(67, 97, 238, 0.07), rgba(58, 12, 163, 0.05));
+}
+
+.emr-table th {
+    padding: 1rem 1.2rem;
+    text-align: left;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--primary, #4361ee);
+    white-space: nowrap;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.emr-table td {
+    padding: 1rem 1.2rem;
+    border-bottom: 1px solid #f1f5f9;
+    color: var(--text-main, #1e293b);
+    vertical-align: middle;
+}
+
+.emr-table tbody tr {
+    transition: background 0.15s;
+}
+
+.emr-table tbody tr:hover {
+    background: rgba(67, 97, 238, 0.03);
+}
+
+.emr-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Status badges */
+.status-badge {
+    display: inline-block;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.status-active {
+    background: rgba(16, 185, 129, 0.12);
+    color: #059669;
+}
+
+.status-follow-up {
+    background: rgba(245, 158, 11, 0.12);
+    color: #d97706;
+}
+
+.status-discharged {
+    background: rgba(107, 114, 128, 0.12);
+    color: #4b5563;
+}
+
+.status-critical {
+    background: rgba(239, 68, 68, 0.12);
+    color: #dc2626;
+}
+
+/* Form Container */
+.emr-form-container {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
+
+.emr-form-container h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--primary, #4361ee);
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(67, 97, 238, 0.1);
+}
+
+/* Form grid */
+.emr-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.2rem;
+}
+
+.emr-form-grid.full-width {
+    grid-template-columns: 1fr;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-field.span-full {
+    grid-column: 1 / -1;
+}
+
+.form-field label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text-secondary, #6b7280);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.form-field input,
+.form-field select,
+.form-field textarea {
+    padding: 0.75rem 1rem;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    color: var(--text-main, #1e293b);
+    background: white;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    font-family: inherit;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.form-field input:focus,
+.form-field select:focus,
+.form-field textarea:focus {
+    border-color: var(--primary, #4361ee);
+    box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+}
+
+.form-field textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+/* Section separator */
+.form-section-title {
+    grid-column: 1 / -1;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--primary, #4361ee);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(67, 97, 238, 0.15);
+    margin-top: 0.5rem;
+}
+
+/* Form actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+/* Error message */
+.error-message {
+    background: rgba(239, 68, 68, 0.1);
+    color: #dc2626;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    border-left: 4px solid #dc2626;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+/* Loading / no-data */
+.loading,
+.no-data {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary, #6b7280);
+    font-size: 1rem;
+}
+
+.no-data svg {
+    display: block;
+    margin: 0 auto 1rem;
+    opacity: 0.4;
+}
+
+/* Record detail card (for patient portal) */
+.emr-record-card {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    border-left: 5px solid var(--primary, #4361ee);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.emr-record-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.emr-record-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.emr-record-card-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-main, #1e293b);
+}
+
+.emr-record-card-meta {
+    font-size: 0.78rem;
+    color: var(--text-secondary, #6b7280);
+    margin-top: 0.2rem;
+}
+
+.emr-record-card-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.8rem;
+    font-size: 0.85rem;
+}
+
+.emr-record-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.emr-record-field-label {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary, #6b7280);
+    font-weight: 600;
+}
+
+.emr-record-field-value {
+    font-weight: 600;
+    color: var(--text-main, #1e293b);
+}
+
+/* Action buttons cell */
+.action-cell {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .emr-container {
+        padding: 1rem;
+    }
+
+    .emr-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .emr-form-grid .form-field.span-full {
+        grid-column: 1;
+    }
+
+    .emr-table th,
+    .emr-table td {
+        padding: 0.75rem 0.8rem;
+        font-size: 0.82rem;
+    }
+}

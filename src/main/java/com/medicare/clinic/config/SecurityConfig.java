@@ -40,8 +40,41 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
+<<<<<<< HEAD
                         // Temporarily disabled security: Allow all requests
                         .anyRequest().permitAll()
+=======
+
+                        // Public
+                        .requestMatchers("/api/auth/**").permitAll()
+
+                        // EMR
+                        .requestMatchers(HttpMethod.GET, "/api/emr/**").authenticated()
+
+                        .requestMatchers(HttpMethod.POST, "/api/emr/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_DOCTOR", "ROLE_PHARMACY")
+
+                        .requestMatchers(HttpMethod.PUT, "/api/emr/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_DOCTOR", "ROLE_PHARMACY")
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/emr/**")
+                        .hasAnyAuthority("ROLE_ADMIN", "ROLE_DOCTOR", "ROLE_PHARMACY")
+
+                        // Pharmacy
+                        .requestMatchers("/api/medicines/**")
+                        .hasAnyAuthority("ROLE_PHARMACY", "ROLE_ADMIN")
+
+                        // Prescriptions
+                        .requestMatchers(HttpMethod.GET, "/api/prescriptions/**").authenticated()
+                        .requestMatchers("/api/prescriptions/issue/**")
+                        .hasAnyAuthority("ROLE_DOCTOR", "ROLE_ADMIN")
+
+                        // AI
+                        .requestMatchers("/api/agent/**").authenticated()
+
+                        // others
+                        .anyRequest().authenticated()
+>>>>>>> 45e23be (“emr”)
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider());
@@ -76,6 +109,7 @@ public class SecurityConfig {
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

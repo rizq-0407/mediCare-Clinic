@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
-import './Login.css'; // Reusing Login.css for consistent theme
+import API from '../services/api';
+import './Login.css';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -11,29 +11,36 @@ export default function Register() {
   const [contactNumber, setContactNumber] = useState('');
   const [role, setRole] = useState('PATIENT');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
   const handleRegister = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
     try {
+<<<<<<< HEAD
       // Always register as PATIENT for public
       const backendRole = 'PATIENT';
       
       const response = await axios.post('http://localhost:8080/api/auth/register', { 
+=======
+      await API.post('/auth/register', { 
+>>>>>>> 45e23be (“emr”)
         username, 
         password, 
         email,
         fullName,
         contactNumber,
-        role: backendRole 
+        role: role.toUpperCase()
       });
       
       alert(`Registration successful! Your System ID is: ${response.data.userId}. Please login using your username.`);
       navigate('/login');
     } catch (err) {
       console.error("Registration error:", err);
-      alert(err.response?.data?.message || "Registration failed. Please try again.");
+      const msg = err.response?.data?.message || "Registration failed. Please try again.";
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
@@ -58,6 +65,23 @@ export default function Register() {
         <form onSubmit={handleRegister} className="login-form">
           <h2>Create Account</h2>
           <p className="login-subtitle">Enter your details to get started</p>
+
+          {error && (
+            <div
+              className="error-message"
+              style={{
+                color: "var(--danger)",
+                background: "rgba(239, 68, 68, 0.1)",
+                padding: "0.8rem",
+                borderRadius: "8px",
+                marginBottom: "1rem",
+                fontSize: "0.9rem",
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </div>
+          )}
 
           <div className="login-field">
             <label>Full Name</label>
