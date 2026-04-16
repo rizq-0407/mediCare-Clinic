@@ -9,6 +9,11 @@ import DoctorDashboard from "./pages/DoctorDashboard";
 import Register from "./pages/Register";
 import Landing from "./pages/Landing";
 import Navbar from "./components/Navbar";
+import MyTickets from "./pages/MyTickets";
+import SubmitTicket from "./pages/SubmitTicket";
+import PatientFeedback from "./pages/PatientFeedback";
+import AdminTicketManagement from "./pages/AdminTicketManagement";
+import AdminFeedbackManagement from "./pages/AdminFeedbackManagement";
 import './index.css';
 
 function App() {
@@ -16,6 +21,7 @@ function App() {
 
     const handleLogout = () => {
         setUser(null);
+        localStorage.clear();
     };
 
     return (
@@ -34,7 +40,12 @@ function App() {
                 <Route path="/pharmacy" element={<Pharmacy />} />
                 <Route path="/patient-dashboard" element={<PatientDashboard />} />
                 <Route path="/patient" element={<Navigate to="/patient-dashboard" replace />} />
+                <Route path="/my-tickets" element={<MyTickets />} />
+                <Route path="/submit-ticket" element={<SubmitTicket />} />
+                <Route path="/feedback" element={<PatientFeedback />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/tickets" element={<AdminTicketManagement />} />
+                <Route path="/admin/feedback" element={<AdminFeedbackManagement />} />
                 <Route path="/doctor" element={<DoctorDashboard user={user} />} />
                 <Route path="/agent-chat" element={<AgentChat />} />
                 <Route path="*" element={<Navigate to="/login" replace />} />
