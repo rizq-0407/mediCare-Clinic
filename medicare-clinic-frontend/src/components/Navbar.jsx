@@ -38,8 +38,19 @@ export default function Navbar({ user, onLogout }) {
 
       <div className="nav-links-center" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
         <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Home</Link>
+        {user && user.role === 'PATIENT' && (
+          <>
+            <Link to="/my-tickets" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>My Tickets</Link>
+            <Link to="/feedback" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Feedback</Link>
+          </>
+        )}
+        {user && user.role === 'ADMIN' && (
+          <>
+            <Link to="/admin/tickets" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Tickets</Link>
+            <Link to="/admin/feedback" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Feedback</Link>
+          </>
+        )}
         <Link to="/about" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>About Us</Link>
-        <Link to="/appointments" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Book Appointment</Link>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
@@ -55,11 +66,8 @@ export default function Navbar({ user, onLogout }) {
           </>
         ) : (
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
               Login
-            </Link>
-            <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
-              Register
             </Link>
           </div>
         )}

@@ -17,7 +17,7 @@ import java.util.function.Function;
 public class JwtService {
 
     private static final String SECRET_KEY = "ThisIsASuperSecretKeyForJwtSignatureGenerationThatIsLongEnough"; // Static key for persistent sessions
-    private static final long EXPIRATION_TIME = 2592000000L; // 30 days in milliseconds
+    private static final long EXPIRATION_TIME = 86400000; // 24 hours
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(java.nio.charset.StandardCharsets.UTF_8));

@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 import PrescriptionForm from '../components/PrescriptionForm';
 
@@ -127,15 +126,6 @@ export default function DoctorDashboard({ user }) {
     }
   };
 
-  const handleDismissResponse = async (id) => {
-    try {
-      await API.put(`/schedules/${id}/dismiss-response`);
-      fetchSchedules();
-    } catch (err) {
-      console.error('Failed to dismiss response:', err);
-    }
-  };
-
   // ── prescription handler ───────────────────────────────────────────────
   const handleCreatePrescription = async (formData) => {
     const payload = {
@@ -169,8 +159,6 @@ export default function DoctorDashboard({ user }) {
     { id: 'create-rx',         icon: '✍️', label: 'New Prescription' },
     { id: 'my-prescriptions',  icon: '📋', label: 'My Prescriptions' },
   ];
-
-  const navigate = useNavigate();
 
   return (
     <div className="dashboard-layout animate-fade-in">
@@ -210,19 +198,6 @@ export default function DoctorDashboard({ user }) {
             </button>
           ))}
         </nav>
-
-        {/* AI Assistant shortcut */}
-        <button
-          className="btn btn-soft"
-          style={{
-            marginTop: '1rem', width: '100%', justifyContent: 'flex-start',
-            gap: '0.8rem', background: 'rgba(16,185,129,0.08)',
-            color: '#10b981', border: '1px solid rgba(16,185,129,0.2)'
-          }}
-          onClick={() => navigate('/agent-chat', { state: { role: 'doctor', patientId: doctorUserId } })}
-        >
-          🤖 AI Assistant
-        </button>
 
         <div className="glass-panel" style={{ marginTop: 'auto', padding: '1rem', borderRadius: '16px' }}>
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.3rem' }}>Logged in as</div>
@@ -289,21 +264,9 @@ export default function DoctorDashboard({ user }) {
                       background: schedule.adminResponse.startsWith('Success') ? 'rgba(56, 176, 0, 0.05)' : 'rgba(230, 57, 70, 0.05)',
                       border: `1px solid ${schedule.adminResponse.startsWith('Success') ? 'var(--success)' : 'var(--danger)'}`,
                       color: schedule.adminResponse.startsWith('Success') ? 'var(--success)' : 'var(--danger)',
-                      fontSize: '0.85rem',
-                      position: 'relative',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      gap: '0.8rem'
+                      fontSize: '0.85rem'
                     }}>
-                      <span>{schedule.adminResponse}</span>
-                      <button 
-                        onClick={() => handleDismissResponse(schedule.id)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '0.2rem', display: 'flex', alignItems: 'center' }}
-                        title="Dismiss"
-                      >
-                        ✕
-                      </button>
+                      {schedule.adminResponse}
                     </div>
                   )}
 
