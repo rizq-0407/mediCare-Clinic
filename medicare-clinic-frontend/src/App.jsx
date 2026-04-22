@@ -6,11 +6,17 @@ import AgentChat from "./pages/AgentChat";
 import PatientDashboard from "./pages/PatientDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import DoctorDashboard from "./pages/DoctorDashboard";
+import StaffDashboard from "./pages/StaffDashboard";
 import Register from "./pages/Register";
 import Landing from "./pages/Landing";
 import EmrDashboard from "./pages/EmrDashboard";
 import EmrFormPage from "./pages/EmrFormPage";
 import Navbar from "./components/Navbar";
+import MyTickets from "./pages/MyTickets";
+import SubmitTicket from "./pages/SubmitTicket";
+import PatientFeedback from "./pages/PatientFeedback";
+import AdminTicketManagement from "./pages/AdminTicketManagement";
+import AdminFeedbackManagement from "./pages/AdminFeedbackManagement";
 import './index.css';
 
 // === BILLING IMPORTS ===
@@ -49,7 +55,7 @@ function App() {
                 <div className="float-symbol" style={{ top: '10%', left: '-5%', opacity: 0.3 }}>☤</div>
                 <div className="float-symbol" style={{ bottom: '0', right: '-10%', fontSize: '20rem', opacity: 0.1 }}>💊</div>
             </div>
-            {user && <Navbar user={user} onLogout={handleLogout} />}
+            {!user && <Navbar user={user} onLogout={handleLogout} />}
             <Routes>
                 {/* ORIGINAL ROUTES */}
                 <Route path="/" element={<Landing />} />
@@ -59,8 +65,14 @@ function App() {
                 <Route path="/patient-dashboard" element={<PatientDashboard />} />
                 <Route path="/patient" element={<Navigate to="/patient-dashboard" replace />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/tickets" element={<AdminTicketManagement />} />
+                <Route path="/admin/feedback" element={<AdminFeedbackManagement />} />
                 <Route path="/doctor" element={<DoctorDashboard user={user} />} />
+                <Route path="/staff" element={<StaffDashboard />} />
                 <Route path="/agent-chat" element={<AgentChat />} />
+                <Route path="/my-tickets" element={<MyTickets />} />
+                <Route path="/submit-ticket" element={<SubmitTicket />} />
+                <Route path="/feedback" element={<PatientFeedback />} />
 
                 {/* === NEW BILLING ROUTES === */}
                 <Route path="/billing-login" element={<BillingLogin />} />

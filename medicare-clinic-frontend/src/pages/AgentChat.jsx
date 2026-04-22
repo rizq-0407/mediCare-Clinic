@@ -199,8 +199,9 @@ export default function AgentChat() {
                         className="back-btn"
                         onClick={handleBack}
                         title="Go back to dashboard"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'transparent', border: 'none', color: 'var(--text-main)', cursor: 'pointer', fontSize: '1rem', fontWeight: '600' }}
                     >
-                        ←
+                        <span>←</span> Back to Dashboard
                     </button>
 
                     <div className="header-avatar" style={{ background: meta.color + "33", borderColor: meta.color }}>

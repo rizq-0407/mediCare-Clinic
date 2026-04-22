@@ -14,8 +14,6 @@ export default function Landing() {
       backgroundRepeat: 'no-repeat',
       backgroundAttachment: 'fixed'
     }}>
-      <Navbar />
-      
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '4rem 2rem', gap: '3rem' }}>
         {/* ── Main Panel ── */}
         <div className="glass-panel" style={{ 
@@ -93,7 +91,7 @@ export default function Landing() {
         </div>
 
         {/* ── Key System Capabilities ── */}
-        <div style={{
+        <div id="services-section" style={{
           maxWidth: '1200px',
           width: '100%',
           display: 'grid',
@@ -119,7 +117,7 @@ export default function Landing() {
         </div>
 
         {/* ── About Our System ── */}
-        <div style={{
+        <div id="about-section" style={{
           maxWidth: '900px',
           width: '100%',
           background: 'rgba(255, 255, 255, 0.65)',

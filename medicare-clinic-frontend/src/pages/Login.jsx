@@ -7,7 +7,7 @@ function Login({ onLogin }) {
   const navigate = useNavigate();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Patient');
+  const [selectedRole, setSelectedRole] = useState('Patient');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -18,27 +18,27 @@ function Login({ onLogin }) {
     
     try {
       const response = await API.post('/auth/login', { username, password });
-      const { token, role, fullName, userId } = response.data;
-      
-      // Store auth data
-      localStorage.setItem('token', token);
-      localStorage.setItem('userId', userId);
-      localStorage.setItem('role', role);
-      localStorage.setItem('fullName', fullName);
-      localStorage.setItem('username', username);
-      
+      const { token, role: userRole, fullName, userId } = response.data;
+
+      // Store auth data in BOTH storages so session restore + dashboard reads both work
+      const authData = { token, userId, role: userRole, fullName, username };
+      Object.entries(authData).forEach(([k, v]) => {
+        localStorage.setItem(k, v);
+        sessionStorage.setItem(k, v);
+      });
+
       if (onLogin) {
-        onLogin({ username: fullName || username, role: role });
+        onLogin({ username: fullName || username, role: userRole });
       }
-      
-      
+
       // Redirect based on role
-      switch(role) {
+      switch(userRole) {
         case 'PHARMACY': navigate('/pharmacy'); break;
-        case 'DOCTOR': navigate('/doctor'); break;
-        case 'ADMIN': navigate('/admin'); break;
-        case 'PATIENT': navigate('/patient-dashboard'); break;
-        default: navigate('/patient-dashboard');
+        case 'DOCTOR':   navigate('/doctor'); break;
+        case 'ADMIN':    navigate('/admin'); break;
+        case 'STAFF':    navigate('/staff'); break;
+        case 'PATIENT':  navigate('/patient-dashboard'); break;
+        default:         navigate('/patient-dashboard');
       }
     } catch (err) {
       console.error("Login detail:", err);

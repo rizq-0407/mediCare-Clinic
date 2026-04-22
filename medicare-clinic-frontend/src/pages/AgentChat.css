@@ -1,7 +1,10 @@
 /* ── Page Wrapper & Animated Background ────────────────────────────────────── */
 .chat-page-wrapper {
-  position: relative;
-  min-height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -9,6 +12,7 @@
   overflow: hidden;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
   color: #1e293b;
+  z-index: 1000;
 }
 
 /* Floating Abstract Orbs */

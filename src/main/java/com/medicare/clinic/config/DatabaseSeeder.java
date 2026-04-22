@@ -20,11 +20,12 @@ public class DatabaseSeeder {
                                    PasswordEncoder passwordEncoder) {
         return args -> {
             // 1. Seed Users (Admin, Doctor, Pharmacy, Patients)
-            seedUser(userRepository, passwordEncoder, "admin", "ADM001", "admin@medicare.com", Role.ADMIN, "System Admin", "555-000");
-            seedUser(userRepository, passwordEncoder, "drjames", "DOC001", "james@medicare.com", Role.DOCTOR, "Dr. James Wilson", "555-001");
-            seedUser(userRepository, passwordEncoder, "pharma_one", "PHM001", "store@medicare.com", Role.PHARMACY, "Sarah Pharma", "555-002");
-            seedUser(userRepository, passwordEncoder, "johndoe", "PAT001", "john@gmail.com", Role.PATIENT, "John Doe", "555-0101");
-            seedUser(userRepository, passwordEncoder, "janesmith", "PAT002", "jane@gmail.com", Role.PATIENT, "Jane Smith", "555-0102");
+            seedUser(userRepository, passwordEncoder, "admin",      "ADM001", "admin@medicare.com",  Role.ADMIN,    "System Admin",     "555-000");
+            seedUser(userRepository, passwordEncoder, "drjames",    "DOC001", "james@medicare.com",  Role.DOCTOR,   "Dr. James Wilson", "555-001");
+            seedUser(userRepository, passwordEncoder, "pharma_one", "PHM001", "store@medicare.com",  Role.PHARMACY, "Sarah Pharma",     "555-002");
+            seedUser(userRepository, passwordEncoder, "staff_one",  "STF001", "staff@medicare.com",  Role.STAFF,    "Alex Reception",   "555-003");
+            seedUser(userRepository, passwordEncoder, "johndoe",    "PAT001", "john@gmail.com",      Role.PATIENT,  "John Doe",         "555-0101");
+            seedUser(userRepository, passwordEncoder, "janesmith",  "PAT002", "jane@gmail.com",      Role.PATIENT,  "Jane Smith",       "555-0102");
 
             // 2. Seed Doctors (Profile details)
             if (doctorRepository.count() == 0) {

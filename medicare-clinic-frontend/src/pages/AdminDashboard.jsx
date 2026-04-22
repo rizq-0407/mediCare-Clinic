@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
 
+import AdminTicketManagement from './AdminTicketManagement';
+import AdminFeedbackManagement from './AdminFeedbackManagement';
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('schedules'); // 'schedules', 'users', or 'emr'
+  const [activeTab, setActiveTab] = useState('schedules'); // 'schedules', 'users', 'register', 'tickets', or 'feedback'
   const [schedules, setSchedules] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -278,9 +281,16 @@ export default function AdminDashboard() {
             Register Personnel
           </button>
 
-          <button className={`btn ${activeTab === 'emr' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('emr')} style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
-            EMR Records
+
+
+          <button className={`btn ${activeTab === 'tickets' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('tickets')} style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem' }}>
+            <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>🎫</span>
+            Ticket Mgt
+          </button>
+
+          <button className={`btn ${activeTab === 'feedback' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('feedback')} style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem' }}>
+            <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>💬</span>
+            User Feedback
           </button>
 
           <div style={{ margin: '1rem 0', borderBottom: '1px solid rgba(255,255,255,0.1)' }}></div>
@@ -299,12 +309,21 @@ export default function AdminDashboard() {
           <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>Logged in as</div>
           <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Administrator</div>
         </div>
+        <button className="btn btn-soft" onClick={() => { sessionStorage.clear(); localStorage.clear(); navigate('/'); }} style={{ marginTop: '1rem', color: 'var(--danger)', width: '100%' }}>
+            Logout
+        </button>
       </aside>
 
       <main className="main-content">
         <header className="header-row">
           <div>
-            <h1>{activeTab === 'schedules' ? 'Schedule Management' : activeTab === 'users' ? 'Clinic Personnel' : activeTab === 'register' ? 'Personnel Registration' : 'EMR Records'}</h1>
+            <h1>{
+                activeTab === 'schedules' ? 'Schedule Management' : 
+                activeTab === 'users' ? 'Clinic Personnel' : 
+                activeTab === 'register' ? 'Personnel Registration' : 
+                activeTab === 'tickets' ? 'Ticket Management' :
+                'User Feedback'
+            }</h1>
             <p style={{ color: 'var(--text-secondary)' }}>Welcome back to the administrator dashboard.</p>
           </div>
           <div className="soft-card" style={{ padding: '0.5rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -313,7 +332,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {activeTab === 'schedules' ? (
+        {activeTab === 'schedules' && (
           <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '2.5rem' }}>
             <section>
               <div className="soft-card" style={{ padding: '2rem' }}>
@@ -433,7 +452,8 @@ export default function AdminDashboard() {
               </div>
             </aside>
           </div>
-        ) : activeTab === 'users' ? (
+        )}
+        {activeTab === 'users' && (
           <div className="animate-fade-in">
             <div className="stat-grid">
               <div className="soft-card stat-card">
@@ -473,7 +493,8 @@ export default function AdminDashboard() {
               </table>
             </div>
           </div>
-        ) : activeTab === 'register' ? (
+        )}
+        {activeTab === 'register' && (
           <div className="animate-fade-in" style={{ maxWidth: '600px', margin: '0 auto' }}>
             <div className="soft-card" style={{ padding: '2.5rem' }}>
               <h3>{isEditingEmployee ? 'Edit Personnel' : 'Register New Personnel'}</h3>
@@ -516,33 +537,16 @@ export default function AdminDashboard() {
               </form>
             </div>
           </div>
-        ) : (
-          <div className="animate-fade-in">
-            <div className="stat-grid">
-              <div className="soft-card stat-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/emr')}>
-                <div className="stat-icon" style={{ background: 'rgba(67,97,238,0.1)', color: '#4361ee' }}>📋</div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>EMR Dashboard</div>
-                  <div style={{ fontSize: '1rem', fontWeight: '700' }}>View All Records</div>
-                </div>
-              </div>
-              <div className="soft-card stat-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/emr/new')}>
-                <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#059669' }}>➕</div>
-                <div>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>New Record</div>
-                  <div style={{ fontSize: '1rem', fontWeight: '700' }}>Create EMR Entry</div>
-                </div>
-              </div>
-            </div>
-            <div className="soft-card" style={{ padding: '2.5rem', marginTop: '2rem', textAlign: 'center' }}>
-              <div style={{ fontSize: '3.5rem', marginBottom: '1rem' }}>🏥</div>
-              <h3>Electronic Medical Records Module</h3>
-              <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>Manage patient medical records and clinical history securely from the EMR portal.</p>
-              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                <button className="btn btn-primary" onClick={() => navigate('/emr')}>📋 Open EMR Dashboard</button>
-                <button className="btn btn-soft" onClick={() => navigate('/emr/new')}>➕ Create New Record</button>
-              </div>
-            </div>
+        )}
+
+        {activeTab === 'tickets' && (
+          <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
+            <AdminTicketManagement />
+          </div>
+        )}
+        {activeTab === 'feedback' && (
+          <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
+            <AdminFeedbackManagement />
           </div>
         )}
       </main>

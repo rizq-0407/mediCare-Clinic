@@ -1,8 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import API from '../services/api';
 
+import MyTickets from './MyTickets';
+import SubmitTicket from './SubmitTicket';
+import PatientFeedback from './PatientFeedback';
+
 export default function PatientDashboard() {
+    const location = useLocation();
     const navigate = useNavigate();
     const [prescriptions, setPrescriptions] = useState([]);
     const [emrRecords, setEmrRecords] = useState([]);
@@ -10,6 +15,14 @@ export default function PatientDashboard() {
     const [emrLoading, setEmrLoading] = useState(false);
     const [error, setError] = useState(null);
     const [activeTab, setActiveTab] = useState('overview');
+    
+    // Automatically switch tabs if routed with state
+    useEffect(() => {
+        if (location.state?.tab) {
+            setActiveTab(location.state.tab);
+        }
+    }, [location.state]);
+
     const [schedules, setSchedules] = useState([]);
     const [bookingLoading, setBookingLoading] = useState(false);
     const [toastMsg, setToastMsg] = useState(null);
@@ -193,6 +206,17 @@ export default function PatientDashboard() {
                     <button onClick={() => navigate('/patient-billing', { state: { patientId: userProfile.id } })} className="btn" style={{ width: '100%', justifyContent: 'flex-start', padding: '1rem 1.5rem', background: '#e0f2fe', color: '#0284c7', border: '1px solid #bae6fd', fontWeight: '700', marginTop: '0.5rem' }}>
                         <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>💳</span>
                         Billing & Payments
+                    </button>
+
+                    <div style={{ height: '1px', background: 'var(--glass-border)', margin: '1rem 0' }} />
+
+                    <button className={`btn ${activeTab === 'tickets' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('tickets')} style={{ width: '100%', justifyContent: 'flex-start' }}>
+                        <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>🎫</span>
+                        Support Tickets
+                    </button>
+                    <button className={`btn ${activeTab === 'feedback' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('feedback')} style={{ width: '100%', justifyContent: 'flex-start' }}>
+                        <span style={{ fontSize: '1.2rem', marginRight: '0.5rem' }}>💬</span>
+                        Feedback
                     </button>
                 </nav>
 
@@ -401,6 +425,27 @@ export default function PatientDashboard() {
                             <div><strong>User ID:</strong> {userProfile.id}</div>
                             <div><strong>Role:</strong> {userProfile.role}</div>
                         </div>
+                    </div>
+                )}
+
+                {activeTab === 'tickets' && (
+                    <div className="animate-fade-in soft-card" style={{ padding: '2.5rem' }}>
+                        <MyTickets onNavigateToSubmit={() => setActiveTab('submit-ticket')} />
+                    </div>
+                )}
+
+                {activeTab === 'submit-ticket' && (
+                    <div className="animate-fade-in soft-card" style={{ padding: '2.5rem' }}>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <button className="btn btn-soft" onClick={() => setActiveTab('tickets')}>← Back to Tickets</button>
+                        </div>
+                        <SubmitTicket />
+                    </div>
+                )}
+
+                {activeTab === 'feedback' && (
+                    <div className="animate-fade-in soft-card" style={{ padding: '2.5rem' }}>
+                        <PatientFeedback />
                     </div>
                 )}
 

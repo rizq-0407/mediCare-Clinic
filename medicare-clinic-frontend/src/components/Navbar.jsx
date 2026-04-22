@@ -1,8 +1,13 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 export default function Navbar({ user, onLogout }) {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  if (['/login', '/register', '/billing-login'].includes(location.pathname)) {
+    return null;
+  }
 
   const handleLogout = () => {
     onLogout();
@@ -38,31 +43,20 @@ export default function Navbar({ user, onLogout }) {
 
       <div className="nav-links-center" style={{ display: 'flex', gap: '2.5rem', alignItems: 'center' }}>
         <Link to="/" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Home</Link>
-        <Link to="/about" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>About Us</Link>
-        <Link to="/appointments" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Book Appointment</Link>
+        <a href="/#about-section" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>About</a>
+        <Link to="/appointments" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Appointment</Link>
+        <a href="/#services-section" style={{ textDecoration: 'none', color: 'var(--text-main)', fontWeight: '600', fontSize: '0.95rem', transition: 'color 0.2s' }}>Service</a>
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-        {user ? (
-          <>
-            <span style={{ color: 'var(--text-light)', fontSize: '0.9rem' }}>
-              Welcome, <strong style={{ color: 'var(--text-main)' }}>{user.username}</strong> 
-              <span className="badge badge-success" style={{ marginLeft: '0.5rem', verticalAlign: 'middle' }}>{user.role}</span>
-            </span>
-            <button className="btn btn-outline" onClick={handleLogout} style={{ padding: '0.5rem 1rem' }}>
-              Logout
-            </button>
-          </>
-        ) : (
           <div style={{ display: 'flex', gap: '1rem' }}>
-            <Link to="/login" className="btn btn-outline" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
-              Login
-            </Link>
-            <Link to="/register" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+            <Link to="/register" className="btn btn-soft" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
               Register
             </Link>
+            <Link to="/login" className="btn btn-primary" style={{ padding: '0.5rem 1.5rem', fontSize: '0.9rem', borderRadius: '8px' }}>
+              Login
+            </Link>
           </div>
-        )}
       </div>
     </nav>
   );

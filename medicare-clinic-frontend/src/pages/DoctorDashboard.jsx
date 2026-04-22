@@ -229,6 +229,13 @@ export default function DoctorDashboard({ user }) {
           <div style={{ fontWeight: '700', fontSize: '0.9rem' }}>Dr. {user?.username || 'Guest'}</div>
           <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>ID: {doctorUserId}</div>
         </div>
+        <button 
+          className="btn btn-soft" 
+          onClick={() => { sessionStorage.clear(); localStorage.clear(); window.location.href = '/'; }} 
+          style={{ marginTop: '1rem', color: 'var(--danger)', width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem' }}
+        >
+          <span>⏻</span> Logout
+        </button>
       </aside>
 
       {/* ── Main Content ── */}

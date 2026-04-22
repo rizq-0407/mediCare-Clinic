@@ -217,13 +217,15 @@ export default function Pharmacy() {
 
                 <div className="sidebar-footer">
                     <div className="sidebar-user">
-                        <div className="user-avatar">P</div>
+                        <div className="user-avatar">
+                            {(localStorage.getItem('fullName') || localStorage.getItem('username') || 'P').charAt(0).toUpperCase()}
+                        </div>
                         <div>
-                            <p className="user-name">Pharmacist</p>
+                            <p className="user-name">{localStorage.getItem('fullName') || localStorage.getItem('username') || 'Pharmacist'}</p>
                             <p className="user-role">On Duty</p>
                         </div>
                     </div>
-                    <button id="logout-btn" className="logout-btn" onClick={handleLogout}>
+                    <button id="logout-btn" className="logout-btn" onClick={() => { sessionStorage.clear(); localStorage.clear(); window.location.href = '/'; }}>
                         <span>⏻</span>
                         Logout
                     </button>
@@ -234,11 +236,12 @@ export default function Pharmacy() {
                 <header className="ph-topbar">
                     <div>
                         <h1 className="topbar-title">Pharmacy Dashboard</h1>
-                        <p className="topbar-subtitle">Manage medication queue and inventory</p>
+                        <p className="topbar-subtitle">
+                          {localStorage.getItem('fullName') || localStorage.getItem('username') 
+                              ? `Welcome back, ${localStorage.getItem('fullName') || localStorage.getItem('username')} — manage medication queue and inventory` 
+                              : `Manage medication queue and inventory`}
+                        </p>
                     </div>
-                    <button className="topbar-logout-btn" onClick={handleLogout}>
-                        <span>⏻</span> Logout
-                    </button>
                 </header>
 
                 {toastMsg && (

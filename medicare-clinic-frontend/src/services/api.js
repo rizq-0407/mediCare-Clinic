@@ -21,9 +21,8 @@ API.interceptors.response.use(
     (error) => {
         if (error.response && (error.response.status === 401 || error.response.status === 403)) {
             console.error("Session expired or unauthorized. Logging out...");
-            localStorage.removeItem("token");
-            localStorage.removeItem("role");
-            localStorage.removeItem("username");
+            localStorage.clear();
+            sessionStorage.clear();
             window.location.href = "/login";
         }
         return Promise.reject(error);
