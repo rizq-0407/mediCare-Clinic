@@ -15,4 +15,18 @@ API.interceptors.request.use((config) => {
     return Promise.reject(error);
 });
 
+// Add a response interceptor to handle expired tokens (403/401)
+API.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+            console.error("Session expired or unauthorized. Logging out...");
+            localStorage.clear();
+            sessionStorage.clear();
+            window.location.href = "/login";
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default API;
