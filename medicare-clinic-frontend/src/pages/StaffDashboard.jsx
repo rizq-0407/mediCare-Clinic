@@ -244,6 +244,17 @@ export default function StaffDashboard() {
     }
   };
 
+  // ── Approve appointment ─────────────────────────────────────────────────────
+  const handleApproveAppointment = async (id) => {
+    try {
+      await API.patch(`/appointments/${id}/status`, { status: 'Scheduled' });
+      fetchAppointments();
+      showToast('Appointment approved successfully!');
+    } catch (err) {
+      showToast('Failed to approve appointment.', 'error');
+    }
+  };
+
   // ── Derived stats ───────────────────────────────────────────────────────────
   const scheduledCount = appointments.filter(a => a.status === 'Scheduled').length;
   const completedCount = appointments.filter(a => a.status === 'Completed').length;
@@ -354,6 +365,9 @@ export default function StaffDashboard() {
               </div>
             </div>
           </div>
+          <button className="staff-logout-btn" onClick={() => navigate('/agent-chat', { state: { role: 'staff' } })} style={{ background: 'rgba(139,92,246,0.08)', color: '#8b5cf6', marginBottom: '0.5rem', border: '1px solid rgba(139,92,246,0.2)' }}>
+            <span>🤖</span> AI Assistant
+          </button>
           <button className="staff-logout-btn" onClick={handleLogout} id="staff-logout-btn">
             <span>🚪</span> Logout
           </button>
@@ -440,12 +454,12 @@ export default function StaffDashboard() {
                 <button className="staff-link-btn" onClick={() => setActiveTab('appointments')}>View all →</button>
               </div>
               {appointments.slice(0, 4).map(appt => (
-                <div key={appt.id} className="staff-appt-row">
-                  <div className="staff-appt-avatar">{(appt.patientUsername || 'P').charAt(0).toUpperCase()}</div>
+                <div key={appt.appointmentId || appt.id} className="staff-appt-row">
+                  <div className="staff-appt-avatar">{(appt.patientName || appt.patientUsername || 'P').charAt(0).toUpperCase()}</div>
                   <div className="staff-appt-info">
-                    <div className="staff-appt-patient">{appt.patientUsername}</div>
+                    <div className="staff-appt-patient">{appt.patientName || appt.patientUsername}</div>
                     <div className="staff-appt-meta">
-                      👨‍⚕️ {appt.employeeUsername} &nbsp;·&nbsp;
+                      👨‍⚕️ {appt.doctorName || appt.employeeUsername} &nbsp;·&nbsp;
                       🕒 {appt.appointmentDate ? new Date(appt.appointmentDate).toLocaleString() : '—'}
                     </div>
                   </div>
@@ -466,7 +480,7 @@ export default function StaffDashboard() {
           <div className="staff-tab-content animate-fade-in">
             {/* Filter bar */}
             <div className="staff-filter-bar">
-              {['all', 'Scheduled', 'Completed', 'Cancelled'].map(s => (
+              {['all', 'Pending', 'Scheduled', 'Completed', 'Cancelled'].map(s => (
                 <button
                   key={s}
                   className={`staff-filter-chip ${apptStatusFilter === s ? 'active' : ''}`}
@@ -499,14 +513,14 @@ export default function StaffDashboard() {
                   </thead>
                   <tbody>
                     {filteredAppointments.map(appt => (
-                      <tr key={appt.id}>
+                      <tr key={appt.appointmentId || appt.id}>
                         <td>
                           <div className="staff-table-user">
-                            <div className="staff-table-avatar">{(appt.patientUsername || 'P').charAt(0).toUpperCase()}</div>
-                            <span>{appt.patientUsername}</span>
+                            <div className="staff-table-avatar">{(appt.patientName || appt.patientUsername || 'P').charAt(0).toUpperCase()}</div>
+                            <span>{appt.patientName || appt.patientUsername}</span>
                           </div>
                         </td>
-                        <td><span className="staff-doc-name">👨‍⚕️ {appt.employeeUsername}</span></td>
+                        <td><span className="staff-doc-name">👨‍⚕️ {appt.doctorName || appt.employeeUsername}</span></td>
                         <td>
                           <span className="staff-date-chip">
                             {appt.appointmentDate ? new Date(appt.appointmentDate).toLocaleDateString() : '—'}
@@ -522,11 +536,21 @@ export default function StaffDashboard() {
                           </span>
                         </td>
                         <td>
-                          {appt.status === 'Scheduled' && (
+                          {appt.status === 'Pending' && (
+                            <button
+                              className="staff-btn"
+                              style={{ background: '#10b981', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '8px', marginRight: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}
+                              onClick={() => handleApproveAppointment(appt.appointmentId || appt.id)}
+                              id={`approve-appt-${appt.appointmentId || appt.id}`}
+                            >
+                              Approve
+                            </button>
+                          )}
+                          {(appt.status === 'Scheduled' || appt.status === 'Pending') && (
                             <button
                               className="staff-danger-btn"
-                              onClick={() => handleCancelAppointment(appt.id)}
-                              id={`cancel-appt-${appt.id}`}
+                              onClick={() => handleCancelAppointment(appt.appointmentId || appt.id)}
+                              id={`cancel-appt-${appt.appointmentId || appt.id}`}
                             >
                               Cancel
                             </button>

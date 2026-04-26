@@ -10,6 +10,7 @@ export default function PatientDashboard() {
     const location = useLocation();
     const navigate = useNavigate();
     const [prescriptions, setPrescriptions] = useState([]);
+    const [appointments, setAppointments] = useState([]);
     const [emrRecords, setEmrRecords] = useState([]);
     const [loading, setLoading] = useState(true);
     const [emrLoading, setEmrLoading] = useState(false);
@@ -56,6 +57,7 @@ export default function PatientDashboard() {
         fetchPrescriptions();
         fetchSchedules();
         fetchEmrRecords();
+        fetchAppointments();
     }, []);
 
     const fetchSchedules = async () => {
@@ -114,6 +116,15 @@ export default function PatientDashboard() {
             setError('⚠️ Could not load prescriptions. (' + (err.response?.data?.message || err.message) + ')');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchAppointments = async () => {
+        try {
+            const response = await API.get(`/appointments/patient/${patientUserId}`);
+            setAppointments(response.data || []);
+        } catch (err) {
+            console.error('Failed to fetch appointments:', err);
         }
     };
 
@@ -314,6 +325,34 @@ export default function PatientDashboard() {
                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>View your EMR records</div>
                                         </div>
                                     </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Future Appointments Section */}
+                        <div style={{ marginTop: '2.5rem' }}>
+                            <div className="soft-card" style={{ padding: '2rem' }}>
+                                <div style={{ marginBottom: '1.5rem' }}>
+                                    <h3>Upcoming Appointments</h3>
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                    {appointments.filter(a => ['Scheduled', 'Pending'].includes(a.status)).map(a => (
+                                        <div key={a.appointmentId} className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                <div className="stat-icon" style={{ width: '40px', height: '40px', fontSize: '1.2rem', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>📅</div>
+                                                <div>
+                                                    <div style={{ fontWeight: '700', fontSize: '1.1rem', color: 'var(--primary)' }}>Dr. {a.doctorName}</div>
+                                                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                        {new Date(a.appointmentDate).toLocaleString([], { weekday: 'short', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} • {a.specialty}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <span className={`badge ${a.status === 'Pending' ? 'badge-warning' : 'badge-success'}`} style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}>{a.status}</span>
+                                        </div>
+                                    ))}
+                                    {appointments.filter(a => ['Scheduled', 'Pending'].includes(a.status)).length === 0 && (
+                                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No upcoming appointments scheduled.</p>
+                                    )}
                                 </div>
                             </div>
                         </div>

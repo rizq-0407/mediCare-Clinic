@@ -1,4 +1,4 @@
-package com.medicare.clinic.entity;
+package com.medicare.clinic.model;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;

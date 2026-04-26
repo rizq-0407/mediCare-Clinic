@@ -1,6 +1,6 @@
 package com.medicare.clinic.controller;
 
-import com.medicare.clinic.entity.Invoice;
+import com.medicare.clinic.model.Invoice;
 import com.medicare.clinic.service.BillingService;
 import com.stripe.Stripe;
 import com.stripe.model.PaymentIntent;

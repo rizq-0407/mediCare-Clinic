@@ -208,7 +208,7 @@ export default function Pharmacy() {
                         id="tab-ai-agent"
                         className="nav-item"
                         onClick={() => navigate('/agent-chat', { state: { role: 'pharmacist' } })}
-                        style={{ background: 'var(--primary-light)', color: 'var(--primary-dark)', marginTop: '1rem', borderRadius: '8px' }}
+                        style={{ background: 'linear-gradient(135deg, rgba(139,92,246,0.1), rgba(139,92,246,0.05))', color: '#8b5cf6', marginTop: 'auto', border: '1px solid rgba(139,92,246,0.2)' }}
                     >
                         <span className="nav-icon">🤖</span>
                         <span>AI Assistant</span>

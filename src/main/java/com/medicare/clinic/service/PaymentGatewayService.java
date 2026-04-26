@@ -1,6 +1,6 @@
 package com.medicare.clinic.service;
 
-import com.medicare.clinic.entity.Invoice;
+import com.medicare.clinic.model.Invoice;
 import com.medicare.clinic.repository.InvoiceRepository;
 import com.stripe.Stripe;
 import com.stripe.model.checkout.Session;

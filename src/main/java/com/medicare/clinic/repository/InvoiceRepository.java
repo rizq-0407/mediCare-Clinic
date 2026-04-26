@@ -1,6 +1,6 @@
 package com.medicare.clinic.repository;
 
-import com.medicare.clinic.entity.Invoice;
+import com.medicare.clinic.model.Invoice;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;

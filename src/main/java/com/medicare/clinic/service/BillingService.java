@@ -1,6 +1,6 @@
 package com.medicare.clinic.service;
 
-import com.medicare.clinic.entity.Invoice;
+import com.medicare.clinic.model.Invoice;
 import com.medicare.clinic.repository.InvoiceRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

@@ -54,8 +54,8 @@ public class AgentOrchestrator {
     public String route(String userMessage, String sessionId, String patientId, String roleUpper) {
         // 1. Continue active multi-step appointment booking (no keyword check needed)
         if (appointmentAgent.hasActiveSession(sessionId)) {
-            if (!roleUpper.equals("DOCTOR") && !roleUpper.equals("ADMIN")) {
-                return "🔒 Booking an appointment is restricted to administrators and doctors.";
+            if (!roleUpper.equals("DOCTOR") && !roleUpper.equals("ADMIN") && !roleUpper.equals("PATIENT")) {
+                return "🔒 Booking an appointment is restricted to administrators, doctors, and patients.";
             }
             cache(sessionId, "APPOINTMENT");
             return appointmentAgent.handle(userMessage, sessionId);
@@ -76,8 +76,8 @@ public class AgentOrchestrator {
                 yield pharmacyAgent.handle(userMessage);
             }
             case "APPOINTMENT" -> {
-                if (!roleUpper.equals("DOCTOR") && !roleUpper.equals("ADMIN")) {
-                    yield "🔒 Doctor agent (Appointments) is restricted to Doctor and Admin dashboards.";
+                if (!roleUpper.equals("DOCTOR") && !roleUpper.equals("ADMIN") && !roleUpper.equals("PATIENT")) {
+                    yield "🔒 Doctor agent (Appointments) is restricted to Doctor, Admin, and Patient dashboards.";
                 }
                 yield appointmentAgent.handle(userMessage, sessionId);
             }
@@ -86,8 +86,8 @@ public class AgentOrchestrator {
                 yield medicalKnowledgeAgent.handle(userMessage);
             }
             default -> { // PATIENT_SUPPORT
-                if (!roleUpper.equals("PATIENT")) {
-                    yield "🔒 Patient agent is restricted to the Patient dashboard.";
+                if (!roleUpper.equals("PATIENT") && !roleUpper.equals("STAFF") && !roleUpper.equals("ADMIN")) {
+                    yield "🔒 Patient agent is restricted to Patient, Staff, and Admin dashboards.";
                 }
                 yield patientSupportAgent.handle(userMessage, patientId);
             }

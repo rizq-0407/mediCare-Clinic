@@ -27,6 +27,7 @@ const ROLE_META = {
     pharmacist: { icon: "💊",   label: "Pharmacy AI Agent",   color: "#8b5cf6" },
     admin:      { icon: "🛡️",  label: "Admin AI Assistant",  color: "#f59e0b" },
     doctor:     { icon: "🩺",   label: "Doctor AI Support",   color: "#10b981" },
+    staff:      { icon: "📋",   label: "Staff AI Support",    color: "#ec4899" },
 };
 
 // Suggested quick-prompts per role
@@ -54,6 +55,12 @@ const QUICK_PROMPTS = {
         "Symptoms of diabetes",
         "Book appointment for patient",
         "Side effects of ibuprofen",
+    ],
+    staff: [
+        "What are clinic hours?",
+        "Book appointment for patient",
+        "What is hypertension?",
+        "Symptoms of flu",
     ],
 };
 
@@ -182,6 +189,7 @@ export default function AgentChat() {
         if (role === "pharmacist") navigate("/pharmacy");
         else if (role === "admin") navigate("/admin");
         else if (role === "doctor") navigate("/doctor");
+        else if (role === "staff") navigate("/staff");
         else navigate("/patient-dashboard");
     };
 
