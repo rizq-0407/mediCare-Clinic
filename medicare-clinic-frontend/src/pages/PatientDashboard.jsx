@@ -39,6 +39,13 @@ export default function PatientDashboard() {
     const storedUsername = sessionStorage.getItem('username') || localStorage.getItem('username') || '';
     const storedRole = sessionStorage.getItem('role') || localStorage.getItem('role') || 'PATIENT';
 
+    // Refresh appointments when returning from AI chat that may have booked one
+    useEffect(() => {
+        if (location.state?.refreshAppointments) {
+            fetchAppointments();
+        }
+    }, [location.state?.refreshAppointments]);
+
     const [userProfile, setUserProfile] = useState({
         name: storedFullName,
         id: storedUserId,
@@ -202,6 +209,10 @@ export default function PatientDashboard() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                         Book Appointment
                     </button>
+                    <button className={`btn ${activeTab === 'appointments' ? 'btn-primary' : 'btn-soft'}`} onClick={() => { setActiveTab('appointments'); fetchAppointments(); }} style={{ width: '100%', justifyContent: 'flex-start' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m6 2a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"></path></svg>
+                        My Appointments
+                    </button>
                     <button className={`btn ${activeTab === 'profile' ? 'btn-primary' : 'btn-soft'}`} onClick={() => setActiveTab('profile')} style={{ width: '100%', justifyContent: 'flex-start' }}>
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                         Profile
@@ -329,14 +340,15 @@ export default function PatientDashboard() {
                             </div>
                         </div>
 
-                        {/* Future Appointments Section */}
+                        {/* Future Appointments Section — overview card */}
                         <div style={{ marginTop: '2.5rem' }}>
                             <div className="soft-card" style={{ padding: '2rem' }}>
-                                <div style={{ marginBottom: '1.5rem' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                                     <h3>Upcoming Appointments</h3>
+                                    <button className="btn btn-soft" onClick={() => { setActiveTab('appointments'); fetchAppointments(); }}>View All</button>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                    {appointments.filter(a => ['Scheduled', 'Pending'].includes(a.status)).map(a => (
+                                    {appointments.filter(a => ['Scheduled', 'Pending'].includes(a.status)).slice(0, 3).map(a => (
                                         <div key={a.appointmentId} className="glass-panel" style={{ padding: '1rem 1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                                                 <div className="stat-icon" style={{ width: '40px', height: '40px', fontSize: '1.2rem', background: 'rgba(99, 102, 241, 0.1)', color: '#6366f1', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%' }}>📅</div>
@@ -351,7 +363,7 @@ export default function PatientDashboard() {
                                         </div>
                                     ))}
                                     {appointments.filter(a => ['Scheduled', 'Pending'].includes(a.status)).length === 0 && (
-                                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No upcoming appointments scheduled.</p>
+                                        <p style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-secondary)' }}>No upcoming appointments. <button className="btn btn-soft" style={{ display: 'inline', padding: '0.2rem 0.6rem' }} onClick={() => setActiveTab('booking')}>Book one now →</button></p>
                                     )}
                                 </div>
                             </div>
@@ -399,6 +411,77 @@ export default function PatientDashboard() {
                                     <button className="btn btn-primary" disabled={bookingLoading} onClick={() => handleBookAppointment(s.id)}>Book Now</button>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                )}
+
+                {activeTab === 'appointments' && (
+                    <div className="animate-fade-in">
+                        <div className="soft-card" style={{ padding: '2rem', marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div>
+                                <h2 style={{ margin: 0 }}>My Appointments</h2>
+                                <p style={{ color: 'var(--text-secondary)', margin: '0.3rem 0 0' }}>All appointments including AI-booked and manually scheduled</p>
+                            </div>
+                            <button className="btn btn-primary" onClick={() => setActiveTab('booking')} style={{ gap: '0.5rem' }}>
+                                📅 Book New
+                            </button>
+                        </div>
+
+                        {appointments.length === 0 ? (
+                            <div className="soft-card" style={{ padding: '3rem', textAlign: 'center' }}>
+                                <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📭</div>
+                                <h3 style={{ color: 'var(--text-secondary)' }}>No Appointments Yet</h3>
+                                <p style={{ color: 'var(--text-secondary)' }}>Book one manually below or use the AI Assistant to schedule through chat.</p>
+                                <button className="btn btn-primary" onClick={() => setActiveTab('booking')} style={{ marginTop: '1rem' }}>Book Appointment</button>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                {appointments.map(a => {
+                                    const statusStyles = {
+                                        'Pending':   { badge: 'badge-warning', border: '#f59e0b', label: '⏳ Pending Staff Approval' },
+                                        'Scheduled': { badge: 'badge-success', border: '#10b981', label: '✅ Confirmed' },
+                                        'Completed': { badge: 'badge-info',    border: '#3b82f6', label: '✔ Completed' },
+                                        'Cancelled': { badge: 'badge-danger',  border: '#ef4444', label: '✕ Cancelled' },
+                                    };
+                                    const s = statusStyles[a.status] || statusStyles['Scheduled'];
+                                    return (
+                                        <div key={a.appointmentId} className="glass-panel" style={{ padding: '1.5rem 2rem', borderLeft: `5px solid ${s.border}`, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr auto', alignItems: 'center', gap: '1.5rem' }}>
+                                            <div>
+                                                <div style={{ fontWeight: '800', fontSize: '1rem', color: 'var(--primary)' }}>Dr. {a.doctorName}</div>
+                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>{a.specialty}</div>
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: '700' }}>
+                                                    📅 {new Date(a.appointmentDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                    🕒 {new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </div>
+                                            </div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                                {a.symptoms ? `🩺 ${a.symptoms.length > 40 ? a.symptoms.slice(0, 40) + '…' : a.symptoms}` : '—'}
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <span className={`badge ${s.badge}`} style={{ fontSize: '0.78rem', padding: '0.4rem 0.8rem', whiteSpace: 'nowrap' }}>
+                                                    {s.label}
+                                                </span>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.3rem' }}>ID #{a.appointmentId}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* AI Booking helper note */}
+                        <div className="soft-card" style={{ padding: '1rem 1.5rem', marginTop: '1.5rem', borderLeft: '4px solid var(--primary)', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <span style={{ fontSize: '1.5rem' }}>🤖</span>
+                            <div>
+                                <div style={{ fontWeight: '700', color: 'var(--primary)' }}>Booked via AI?</div>
+                                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                    AI-booked appointments start as <strong>Pending</strong> and appear here once staff approve them to <strong>Scheduled</strong>.
+                                </div>
+                            </div>
                         </div>
                     </div>
                 )}

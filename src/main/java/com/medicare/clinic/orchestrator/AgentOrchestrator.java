@@ -58,7 +58,7 @@ public class AgentOrchestrator {
                 return "🔒 Booking an appointment is restricted to administrators, doctors, and patients.";
             }
             cache(sessionId, "APPOINTMENT");
-            return appointmentAgent.handle(userMessage, sessionId);
+            return appointmentAgent.handle(userMessage, sessionId, patientId);
         }
 
         // 2. Pure keyword routing — NO Gemini API call
@@ -79,7 +79,7 @@ public class AgentOrchestrator {
                 if (!roleUpper.equals("DOCTOR") && !roleUpper.equals("ADMIN") && !roleUpper.equals("PATIENT")) {
                     yield "🔒 Doctor agent (Appointments) is restricted to Doctor, Admin, and Patient dashboards.";
                 }
-                yield appointmentAgent.handle(userMessage, sessionId);
+                yield appointmentAgent.handle(userMessage, sessionId, patientId);
             }
             case "MEDICAL_KNOWLEDGE" -> {
                 // Common for all

@@ -320,7 +320,14 @@ export default function AdminDashboard() {
       <main className="main-content">
         <header className="header-row">
           <div>
-            <h1>{activeTab === 'schedules' ? 'Schedule Management' : activeTab === 'users' ? 'Clinic Personnel' : activeTab === 'register' ? 'Personnel Registration' : 'EMR Records'}</h1>
+            <h1>
+              {activeTab === 'schedules' ? 'Schedule Management' :
+                activeTab === 'users' ? 'Clinic Personnel' :
+                  activeTab === 'register' ? 'Personnel Registration' :
+                    activeTab === 'tickets' ? 'Support Tickets' :
+                      activeTab === 'feedback' ? 'User Feedback' :
+                        'EMR Records'}
+            </h1>
             <p style={{ color: 'var(--text-secondary)' }}>Welcome back to the administrator dashboard.</p>
           </div>
           <div className="soft-card" style={{ padding: '0.5rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
@@ -403,6 +410,13 @@ export default function AdminDashboard() {
                       <option value="Cardiologist">Cardiologist</option>
                       <option value="Neurologist">Neurologist</option>
                       <option value="Pediatrician">Pediatrician</option>
+                      <option value="Dermatologist">Dermatologist</option>
+                      <option value="Ophthalmologist">Ophthalmologist</option>
+                      <option value="ENT">ENT</option>
+                      <option value="Gynecologist">Gynecologist</option>
+                      <option value="Orthopedic">Orthopedic</option>
+                      <option value="Psychiatrist">Psychiatrist</option>
+                      <option value="Dentist">Dentist</option>
                     </select>
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
@@ -532,7 +546,7 @@ export default function AdminDashboard() {
               </form>
             </div>
           </div>
-        ) : (
+        ) : activeTab === 'emr' ? (
           <div className="animate-fade-in">
             <div className="stat-grid">
               <div className="soft-card stat-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/emr')}>
@@ -560,15 +574,15 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-        )}: activeTab === 'tickets' ? (
-        <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
-          <AdminTicketManagement />
-        </div>
+        ) : activeTab === 'tickets' ? (
+          <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
+            <AdminTicketManagement />
+          </div>
         ) : activeTab === 'feedback' ? (
-        <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
-          <AdminFeedbackManagement />
-        </div>
-        ) : null
+          <div className="animate-fade-in soft-card" style={{ padding: '2rem' }}>
+            <AdminFeedbackManagement />
+          </div>
+        ) : null}
       </main>
     </div>
   );

@@ -99,7 +99,7 @@ CREATE TABLE Appointments (
     Specialty        VARCHAR(100) NOT NULL,
     AppointmentDate  DATETIME NOT NULL,
     Symptoms         TEXT,
-    Status           VARCHAR(20) DEFAULT 'Scheduled', -- Scheduled, Completed, Cancelled
+    Status           VARCHAR(20) DEFAULT 'Scheduled', -- Scheduled, Pending, Completed, Cancelled
     Notes            TEXT,
     CreatedAt        DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -202,13 +202,16 @@ CREATE TABLE Tickets (
 -- =============================================
 CREATE TABLE Feedback (
     id               BIGINT AUTO_INCREMENT PRIMARY KEY,
+    feedbackId       VARCHAR(20) UNIQUE NOT NULL,
     patientId        VARCHAR(20) NOT NULL,
-    patientName      VARCHAR(100),
     rating           INT CHECK (rating BETWEEN 1 AND 5),
-    comment          TEXT,
-    experienceDate   DATE,
-    clinicService    VARCHAR(100),
-    createdAt        DATETIME DEFAULT CURRENT_TIMESTAMP
+    comments         LONGTEXT,
+    isPublic         BOOLEAN DEFAULT FALSE,
+    adminReply       LONGTEXT,
+    repliedBy        VARCHAR(100),
+    firstResponseAt  DATETIME,
+    createdAt        DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updatedAt        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
 -- =============================================
@@ -241,14 +244,15 @@ INSERT INTO Medicines (MedicineID, Name, Category, Description, UnitPrice, Stock
 
 -- Seeding Schedules
 INSERT INTO Schedules (doctor_name, specialization, schedule_date, schedule_time, available_slots, room_number) VALUES
-('Dr. James Wilson', 'Cardiology', '2026-04-25', '09:00 AM - 11:00 AM', 10, 'Room 101'),
-('Dr. James Wilson', 'Cardiology', '2026-04-27', '02:00 PM - 04:00 PM', 8, 'Room 101'),
-('Sarah Doctor', 'Dermatology', '2026-04-26', '10:00 AM - 12:00 PM', 5, 'Room 205');
+('Dr. James Wilson', 'Cardiology',   '2026-06-10', '09:00', 10, 'Room 101'),
+('Dr. James Wilson', 'Cardiology',   '2026-06-12', '14:00', 8,  'Room 101'),
+('Sarah Doctor',     'Dermatology',  '2026-06-11', '10:00', 5,  'Room 205'),
+('Dr. James Wilson', 'General',      '2026-06-15', '11:00', 12, 'Room 102');
 
 -- Seeding Appointments
 INSERT INTO Appointments (PatientName, PatientId, DoctorName, Specialty, AppointmentDate, Symptoms, Status) VALUES
-('John Doe',   'PAT001', 'Dr. James Wilson', 'Cardiology', '2026-04-25 09:30:00', 'Chest pain, shortness of breath', 'Scheduled'),
-('Jane Smith', 'PAT002', 'Dr. James Wilson', 'Cardiology', '2026-04-27 14:15:00', 'Routine checkup', 'Scheduled');
+('John Doe',   'PAT001', 'Dr. James Wilson', 'Cardiology', '2026-06-10 09:30:00', 'Chest pain, shortness of breath', 'Scheduled'),
+('Jane Smith', 'PAT002', 'Dr. James Wilson', 'Cardiology', '2026-06-12 14:15:00', 'Routine checkup',                  'Scheduled');
 
 -- Seeding Medical Records (EMR)
 INSERT INTO MedicalRecords (PatientFullName, PatientUsername, DateOfBirth, Gender, BloodGroup, Allergies, AttendingDoctor, VisitDate, Status) VALUES

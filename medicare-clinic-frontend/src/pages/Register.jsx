@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import API from '../services/api';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css'; // Reusing Login.css for consistent theme
 
@@ -20,7 +20,7 @@ export default function Register() {
       // Always register as PATIENT for public
       const backendRole = 'PATIENT';
       
-      const response = await axios.post('http://localhost:8080/api/auth/register', { 
+      const response = await API.post('/auth/register', { 
         username, 
         password, 
         email,

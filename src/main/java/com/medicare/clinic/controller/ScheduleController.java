@@ -50,8 +50,8 @@ public class ScheduleController {
 
     // ✅ BOOK (Patient side)
     @PostMapping("/book/{id}")
-    public Schedule book(@PathVariable Long id, @RequestParam String patientId) {
-        return service.bookSchedule(id, patientId);
+    public com.medicare.clinic.model.Appointment book(@PathVariable Long id, @RequestParam String patientId) {
+        return service.bookSchedule(id, patientId, "Scheduled");
     }
 
     // ✅ DOCTOR REQUEST (STRUCTURED)

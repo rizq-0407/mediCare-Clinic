@@ -2,6 +2,7 @@ package com.medicare.clinic.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -39,12 +40,55 @@ public class SecurityConfig {
                 .cors(Customizer.withDefaults())
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // Allow all requests — JWT filter handles authentication for controllers
-                        .anyRequest().permitAll()
-                )
+
+                        // ── PUBLIC — no token required ──────────────────────────────────────
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/agent/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/schedules/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/schedules/search").permitAll()
+                        .requestMatchers(HttpMethod.PUT, "/api/schedules/*/request").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/schedules/*/dismiss-response").hasRole("DOCTOR")
+                        .requestMatchers(HttpMethod.PUT, "/api/schedules/*/approve").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/schedules/*/reject").hasRole("ADMIN")
+                        .requestMatchers("/api/schedules/**").hasRole("ADMIN")
+
+                        // ── ADMIN-ONLY ───────────────────────────────────────────────────────
+                        .requestMatchers("/api/auth/register-employee").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/users/**").hasRole("ADMIN")
+
+                        // ── STAFF / ADMIN / DOCTOR / PHARMACY — can list all users/patients
+                        // ─────────────
+                        .requestMatchers(HttpMethod.GET, "/api/users")
+                        .hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PHARMACY")
+                        .requestMatchers(HttpMethod.GET, "/api/users/patients")
+                        .hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PHARMACY")
+                        .requestMatchers(HttpMethod.GET, "/api/users/doctors")
+                        .hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PHARMACY")
+
+                        // ── STAFF / ADMIN / DOCTOR / PATIENT — appointment management ──────────────────
+                        .requestMatchers(HttpMethod.GET, "/api/appointments").hasAnyRole("ADMIN", "STAFF", "DOCTOR")
+                        .requestMatchers("/api/appointments/patient/**").hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PATIENT")
+                        .requestMatchers(HttpMethod.PATCH, "/api/appointments/**").hasAnyRole("ADMIN", "STAFF")
+                        .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasAnyRole("ADMIN", "STAFF")
+
+                        // ── PHARMACY / ADMIN / DOCTOR — medicine inventory
+                        // ────────────────────────────
+                        .requestMatchers("/api/medicines/**").hasAnyRole("ADMIN", "PHARMACY", "DOCTOR")
+
+                        // ── PRESCRIPTIONS — doctor (create), pharmacy (dispense), admin (view)
+                        // ────────
+                        .requestMatchers("/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR", "PHARMACY", "PATIENT")
+
+                        // ── EMR — staff, doctors, admins, and patients (own records) ────────────────────────────────
+                        .requestMatchers("/api/emr/**").hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PATIENT")
+
+                        // ── ALL OTHER endpoints require a valid JWT ───────────────────────────
+                        .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())
-                // ✅ Wire JWT filter so SecurityContext is populated on every request
+                // ✅ JWT filter populates SecurityContext — runs before any access-check
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
@@ -71,13 +115,14 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://127.0.0.1:5173"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowedHeaders(
+                Arrays.asList("Authorization", "Content-Type", "Accept", "X-Requested-With", "Origin"));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;
     }
-}
+}

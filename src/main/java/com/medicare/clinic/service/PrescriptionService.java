@@ -149,6 +149,21 @@ public class PrescriptionService {
         dto.setId(prescriptionId);
         dto.setStatus("Pending");
         dto.setCreatedAt(now.format(DateTimeFormatter.ISO_LOCAL_DATE));
+
+        // Populate names for immediate UI feedback
+        if (dto.getMedicineId() != null) {
+            medicineRepository.findById(dto.getMedicineId())
+                .ifPresent(m -> dto.setMedicineName(m.getName()));
+        }
+        if (dto.getPatientId() != null) {
+            userRepository.findByUserId(dto.getPatientId())
+                .ifPresent(u -> dto.setPatientName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
+        }
+        if (dto.getDoctorId() != null) {
+            userRepository.findByUserId(dto.getDoctorId())
+                .ifPresent(u -> dto.setDoctorName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
+        }
+
         return dto;
     }
 
@@ -214,6 +229,32 @@ public class PrescriptionService {
             dto.setMedicineId(firstItem.getMedicineId());
             dto.setDosage(firstItem.getDosage());
             dto.setDuration(firstItem.getDuration());
+
+            // Handle stock decrement when dispensed
+            if ("Dispensed".equalsIgnoreCase(newStatus) || "COMPLETED".equalsIgnoreCase(newStatus)) {
+                medicineRepository.findById(firstItem.getMedicineId()).ifPresent(m -> {
+                    int currentStock = m.getStockQuantity() != null ? m.getStockQuantity() : 0;
+                    int quantityToReduce = firstItem.getQuantity() != null ? firstItem.getQuantity() : 1;
+                    if (currentStock >= quantityToReduce) {
+                        m.setStockQuantity(currentStock - quantityToReduce);
+                        medicineRepository.save(m);
+                        System.out.println("Stock decremented for " + m.getName() + ". New stock: " + m.getStockQuantity());
+                    }
+                });
+            }
+
+            medicineRepository.findById(firstItem.getMedicineId())
+                .ifPresent(m -> dto.setMedicineName(m.getName()));
+        }
+
+        if (prescription.getPatientId() != null) {
+            userRepository.findByUserId(prescription.getPatientId())
+                .ifPresent(u -> dto.setPatientName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
+        }
+
+        if (prescription.getDoctorId() != null) {
+            userRepository.findByUserId(prescription.getDoctorId())
+                .ifPresent(u -> dto.setDoctorName(u.getFullName() != null ? u.getFullName() : u.getUsername()));
         }
 
         return dto;

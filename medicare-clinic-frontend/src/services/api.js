@@ -19,7 +19,9 @@ API.interceptors.request.use((config) => {
 API.interceptors.response.use(
     (response) => response,
     (error) => {
-        if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        const isAuthRequest = error.config && error.config.url && error.config.url.includes('/auth/');
+        
+        if (error.response && (error.response.status === 401 || error.response.status === 403) && !isAuthRequest) {
             console.error("Session expired or unauthorized. Logging out...");
             localStorage.clear();
             sessionStorage.clear();

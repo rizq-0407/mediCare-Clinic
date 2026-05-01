@@ -25,11 +25,11 @@ public class AuthController {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    public AuthController(AuthenticationManager authenticationManager, 
-                          UserDetailsService userDetailsService, 
-                          JwtService jwtService, 
-                          UserRepository userRepository, 
-                          PasswordEncoder passwordEncoder) {
+    public AuthController(AuthenticationManager authenticationManager,
+            UserDetailsService userDetailsService,
+            JwtService jwtService,
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder) {
         this.authenticationManager = authenticationManager;
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
@@ -39,21 +39,27 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+        System.out.println("Login attempt for user: " + request.getUsername());
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        } catch (Exception e) {
+            System.out.println("Authentication failed for: " + request.getUsername() + " - " + e.getMessage());
+            return ResponseEntity.status(401).body(Map.of("message", "Invalid username or password"));
+        }
+
         final UserDetails userDetails = userDetailsService.loadUserByUsername(request.getUsername());
         final String jwt = jwtService.generateToken(userDetails);
-        
+
         User user = userRepository.findByUsername(request.getUsername()).orElseThrow();
-        
+        System.out.println("Login successful for: " + user.getUsername() + " [Role: " + user.getRole() + "]");
+
         return ResponseEntity.ok(Map.of(
-            "token", jwt,
-            "username", user.getUsername(),
-            "userId", user.getUserId(),
-            "role", user.getRole(),
-            "fullName", user.getFullName()
-        ));
+                "token", jwt,
+                "username", user.getUsername(),
+                "userId", user.getUserId(),
+                "role", user.getRole(),
+                "fullName", user.getFullName()));
     }
 
     private String generateUserId(Role role) {
@@ -82,14 +88,14 @@ public class AuthController {
         } else {
             return ResponseEntity.badRequest().body(Map.of("message", "Public registration is only for patients."));
         }
-        
+
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken."));
         }
-        
+
         user.setUserId(generateUserId(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
+
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Patient registered successfully", "userId", user.getUserId()));
     }
@@ -99,14 +105,14 @@ public class AuthController {
         if (user.getRole() == null || user.getRole() == Role.PATIENT) {
             return ResponseEntity.badRequest().body(Map.of("message", "This endpoint is for employee registration."));
         }
-        
+
         if (userRepository.findByUsername(user.getUsername()).isPresent()) {
             return ResponseEntity.badRequest().body(Map.of("message", "Username is already taken."));
         }
-        
+
         user.setUserId(generateUserId(user.getRole()));
         user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
+
         userRepository.save(user);
         return ResponseEntity.ok(Map.of("message", "Employee registered successfully", "userId", user.getUserId()));
     }

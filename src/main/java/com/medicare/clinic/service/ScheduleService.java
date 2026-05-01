@@ -1,9 +1,13 @@
 package com.medicare.clinic.service;
 
 import com.medicare.clinic.model.Schedule;
+import com.medicare.clinic.model.Appointment;
+import com.medicare.clinic.repository.AppointmentRepository;
 import com.medicare.clinic.repository.ScheduleRepository;
+import com.medicare.clinic.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.time.LocalDateTime;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -14,9 +18,15 @@ import java.util.List;
 public class ScheduleService {
 
     private final ScheduleRepository repository;
+    private final AppointmentRepository appointmentRepository;
+    private final UserRepository userRepository;
 
-    public ScheduleService(ScheduleRepository repository) {
+    public ScheduleService(ScheduleRepository repository, 
+                           AppointmentRepository appointmentRepository,
+                           UserRepository userRepository) {
         this.repository = repository;
+        this.appointmentRepository = appointmentRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Schedule> getAllSchedules() {
@@ -55,14 +65,45 @@ public class ScheduleService {
         repository.deleteById(id);
     }
 
-    public Schedule bookSchedule(Long id, String patientId) {
+    @Transactional
+    public Appointment bookSchedule(Long id, String patientId, String initialStatus) {
         Schedule schedule = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
+        
         if (schedule.getAvailableSlots() <= 0) {
             throw new RuntimeException("No slots available");
         }
+
+        // 1. Decrement slots
         schedule.setAvailableSlots(schedule.getAvailableSlots() - 1);
-        return repository.save(schedule);
+        repository.save(schedule);
+
+        // 2. Create Appointment record
+        Appointment appt = new Appointment();
+        appt.setPatientId(patientId);
+        
+        // Try to get patient's full name for better record keeping
+        String patientName = userRepository.findByUserId(patientId)
+                .map(u -> u.getFullName() != null ? u.getFullName() : u.getUsername())
+                .orElse("Unknown Patient");
+        appt.setPatientName(patientName);
+        
+        appt.setDoctorName(schedule.getDoctorName());
+        appt.setSpecialty(schedule.getSpecialization());
+        
+        // Parse date/time
+        try {
+            String timeStr = schedule.getTime();
+            if (timeStr.length() == 5) timeStr += ":00";
+            appt.setAppointmentDate(LocalDateTime.parse(schedule.getDate() + "T" + timeStr));
+        } catch (Exception e) {
+            appt.setAppointmentDate(LocalDateTime.now().plusDays(1).withHour(9).withMinute(0));
+        }
+        
+        appt.setStatus(initialStatus != null ? initialStatus : "Scheduled");
+        appt.setSymptoms("Booking via clinic system");
+        
+        return appointmentRepository.save(appt);
     }
 
     public Schedule requestScheduleUpdate(Long id, Schedule request) {

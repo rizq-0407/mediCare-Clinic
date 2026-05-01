@@ -47,6 +47,8 @@ public class Appointment {
     @PrePersist
     public void prePersist() {
         if (createdAt == null) createdAt = LocalDateTime.now();
+        // Only set default status if it was never explicitly set
+        // (AI agent sets "Pending" before save — do NOT override it here)
         if (status == null) status = "Scheduled";
     }
 }

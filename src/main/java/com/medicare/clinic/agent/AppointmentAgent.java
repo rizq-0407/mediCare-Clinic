@@ -5,6 +5,7 @@ import com.medicare.clinic.model.Appointment;
 import com.medicare.clinic.model.Schedule;
 import com.medicare.clinic.repository.AppointmentRepository;
 import com.medicare.clinic.repository.ScheduleRepository;
+import com.medicare.clinic.service.ScheduleService;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -27,6 +28,7 @@ public class AppointmentAgent {
     private final GeminiService gemini;
     private final AppointmentRepository appointmentRepo;
     private final ScheduleRepository scheduleRepo;
+    private final ScheduleService scheduleService;
 
     // Track active booking sessions to lock routing
     private final Map<String, Boolean> activeSessions = new ConcurrentHashMap<>();
@@ -36,21 +38,27 @@ public class AppointmentAgent {
 
     public AppointmentAgent(GeminiService gemini,
                             AppointmentRepository appointmentRepo,
-                            ScheduleRepository scheduleRepo) {
+                            ScheduleRepository scheduleRepo,
+                            ScheduleService scheduleService) {
         this.gemini = gemini;
         this.appointmentRepo = appointmentRepo;
         this.scheduleRepo = scheduleRepo;
+        this.scheduleService = scheduleService;
     }
 
     public String handle(String userMessage) {
-        return handle(userMessage, null);
+        return handle(userMessage, null, null);
+    }
+
+    public String handle(String userMessage, String sessionId) {
+        return handle(userMessage, sessionId, null);
     }
 
     public boolean hasActiveSession(String sessionId) {
         return sessionId != null && activeSessions.containsKey(sessionId);
     }
 
-    public String handle(String userMessage, String sessionId) {
+    public String handle(String userMessage, String sessionId, String patientId) {
         String lowerMsg = userMessage.toLowerCase();
 
         // ── 0. Handle cancellation / reschedule keywords ──────────────────────
@@ -63,7 +71,8 @@ public class AppointmentAgent {
                 || lowerMsg.contains("list appointments")) {
             activeSessions.remove(sessionId);
             sessionHistory.remove(sessionId);
-            return handleListAppointments(sessionId);
+            // Use real patientId (e.g. PAT001), NOT sessionId (sess-xxx)
+            return handleListAppointments(patientId);
         }
 
         // Lock session if booking intent detected
@@ -146,13 +155,16 @@ public class AppointmentAgent {
         if (geminiResponse.contains("BOOK_APPT_CMD|")) {
             activeSessions.remove(sessionId);
             sessionHistory.remove(sessionId);
-            return processBookingCommand(geminiResponse, sessionId);
+            // Pass real patientId — NOT sessionId — so appointment shows on patient portal
+            return processBookingCommand(geminiResponse, patientId);
         }
 
         return geminiResponse;
     }
 
-    private String processBookingCommand(String geminiResponse, String sessionId) {
+    private String processBookingCommand(String geminiResponse, String patientId) {
+        if (geminiResponse == null) return "";
+        
         try {
             String[] lines = geminiResponse.split("\n");
             StringBuilder cleanResponse = new StringBuilder();
@@ -169,50 +181,47 @@ public class AppointmentAgent {
             if (commandLine != null) {
                 String[] parts = commandLine.split("\\|");
                 if (parts.length >= 4) {
-                    String patientName = parts[1].trim();
                     String symptoms = parts[2].trim();
-                    Long scheduleId = Long.parseLong(parts[3].trim());
+                    String scheduleIdStr = parts[3].trim();
+                    Long scheduleId = Long.parseLong(scheduleIdStr);
                     
-                    Schedule schedule = scheduleRepo.findById(scheduleId).orElse(null);
-                    if (schedule != null) {
-                        Appointment appt = new Appointment();
-                        appt.setPatientName(patientName);
-                        // If patient is logged in, sessionId usually matches patientId. We can fallback to it.
-                        appt.setPatientId(sessionId);
-                        appt.setDoctorName(schedule.getDoctorName());
-                        appt.setSpecialty(schedule.getSpecialization());
+                    try {
+                        // Use ScheduleService to handle slot decrement + appointment creation
+                        Appointment saved = scheduleService.bookSchedule(scheduleId, patientId, "Pending");
                         
-                        try {
-                            // Convert string date/time to LocalDateTime for DB (Format: yyyy-MM-dd / HH:mm)
-                            String timeString = schedule.getTime();
-                            if (timeString.length() == 5) timeString += ":00"; // Ensure HH:mm:ss
-                            LocalDateTime dateTime = LocalDateTime.parse(schedule.getDate() + "T" + timeString);
-                            appt.setAppointmentDate(dateTime);
-                        } catch (Exception e) {
-                            // Fallback if schedule date format is weird
-                            appt.setAppointmentDate(LocalDateTime.now().plusDays(1).withHour(9).withMinute(0));
+                        // Update symptoms if provided by Gemini
+                        if (symptoms != null && !symptoms.isBlank()) {
+                            saved.setSymptoms(symptoms);
+                            appointmentRepo.save(saved);
                         }
                         
-                        appt.setSymptoms(symptoms);
-                        // User requirement: Initial status should be "Pending" for staff to confirm
-                        appt.setStatus("Pending"); 
+                        String responseText = cleanResponse.toString().trim();
+                        String successInfo = String.format(
+                            "\n\n✅ **Appointment Request Submitted Successfully!**\n\n" +
+                            "📋 **ID:** #%d\n" +
+                            "👤 **Patient:** %s\n" +
+                            "👨‍⚕️ **Doctor:** Dr. %s (%s)\n" +
+                            "📅 **Date:** %s\n" +
+                            "📌 **Status:** %s\n\n" +
+                            "Your appointment is currently **Pending**. Our staff will review and confirm it shortly. Is there anything else I can help you with?",
+                            saved.getAppointmentId(),
+                            saved.getPatientName(),
+                            saved.getDoctorName(),
+                            saved.getSpecialty(),
+                            saved.getAppointmentDate().format(DateTimeFormatter.ofPattern("EEEE, dd MMM yyyy 'at' hh:mm a")),
+                            saved.getStatus()
+                        );
                         
-                        Appointment saved = appointmentRepo.save(appt);
-                        
-                        return cleanResponse.toString().trim() + "\n\n✅ **Appointment Request Submitted Successfully!**\n\n"
-                            + "📋 **ID:** #" + saved.getAppointmentId() + "\n"
-                            + "👤 **Patient:** " + saved.getPatientName() + "\n"
-                            + "👨‍⚕️ **Doctor:** Dr. " + saved.getDoctorName() + " (" + saved.getSpecialty() + ")\n"
-                            + "📅 **Date:** " + saved.getAppointmentDate().format(DateTimeFormatter.ofPattern("EEEE, dd MMM yyyy 'at' hh:mm a")) + "\n"
-                            + "📌 **Status:** " + saved.getStatus() + "\n\n"
-                            + "Your appointment is currently **Pending**. Our staff will review and confirm it shortly via the Staff Dashboard. Is there anything else I can help you with?";
-                    } else {
-                        return cleanResponse.toString().trim() + "\n\n❌ I'm sorry, but that schedule slot seems to be invalid or no longer available. Please choose another schedule ID.";
+                        return responseText + successInfo;
+                    } catch (Exception e) {
+                        return cleanResponse.toString().trim() + "\n\n❌ Booking failed: " + e.getMessage();
                     }
+                } else {
+                    return cleanResponse.toString().trim() + "\n\n❌ I'm sorry, I couldn't understand the booking details. Please try again.";
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error parsing booking command: " + e.getMessage());
+            System.err.println("Error in processBookingCommand: " + e.getMessage());
         }
         return geminiResponse;
     }
