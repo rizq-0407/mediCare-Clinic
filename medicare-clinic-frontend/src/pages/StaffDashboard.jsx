@@ -105,6 +105,8 @@ export default function StaffDashboard() {
     visitDate: new Date().toISOString().split('T')[0],
     nextVisitFollowUpDate: '',
     status: 'Active',
+    diagnosis: '',
+    notes: '',
   });
   const [emrSubmitting, setEmrSubmitting] = useState(false);
 
@@ -156,8 +158,8 @@ export default function StaffDashboard() {
       setEmrRecords(Array.isArray(res.data) ? res.data : []);
     } catch {
       setEmrRecords([
-        { id: 1, patientUsername: 'johndoe', doctorName: 'Dr. James Wilson', diagnosis: 'Hypertension', treatmentPlan: 'Medication + Lifestyle changes', visitDate: '2026-04-10', notes: 'Follow up in 30 days' },
-        { id: 2, patientUsername: 'janesmith', doctorName: 'Dr. James Wilson', diagnosis: 'Migraine', treatmentPlan: 'Pain management', visitDate: '2026-04-15', notes: 'Avoid triggers' },
+        { id: 1, patientUsername: 'johndoe', attendingDoctor: 'Dr. James Wilson', diagnosis: 'Hypertension', visitDate: '2026-04-10', notes: 'Medication + Lifestyle changes. Follow up in 30 days' },
+        { id: 2, patientUsername: 'janesmith', attendingDoctor: 'Dr. James Wilson', diagnosis: 'Migraine', visitDate: '2026-04-15', notes: 'Pain management. Avoid triggers' },
       ]);
     } finally {
       setLoading(prev => ({ ...prev, emr: false }));
@@ -269,7 +271,7 @@ export default function StaffDashboard() {
     return (
       (r.patientUsername || '').toLowerCase().includes(q) ||
       (r.diagnosis || '').toLowerCase().includes(q) ||
-      (r.doctorName || '').toLowerCase().includes(q)
+      (r.attendingDoctor || '').toLowerCase().includes(q)
     ) && (!emrPatientFilter || r.patientUsername === emrPatientFilter);
   });
 
@@ -286,7 +288,7 @@ export default function StaffDashboard() {
       const payload = { ...emrForm };
       if (!payload.dateOfBirth) payload.dateOfBirth = null;
       if (!payload.nextVisitFollowUpDate) payload.nextVisitFollowUpDate = null;
-      
+
       await API.post('/emr', payload);
       showToast('Medical record created successfully!');
       setEmrForm({
@@ -300,6 +302,8 @@ export default function StaffDashboard() {
         visitDate: new Date().toISOString().split('T')[0],
         nextVisitFollowUpDate: '',
         status: 'Active',
+        diagnosis: '',
+        notes: '',
       });
       setActiveTab('emr');
       fetchEmr();
@@ -345,13 +349,13 @@ export default function StaffDashboard() {
         </div>
 
         <nav className="staff-nav">
-          <NavItem icon="🏠" label="Overview"     tabKey="overview"     activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="🏠" label="Overview" tabKey="overview" activeTab={activeTab} onClick={setActiveTab} />
           <NavItem icon="📅" label="Appointments" tabKey="appointments" activeTab={activeTab} onClick={setActiveTab} />
-          <NavItem icon="➕" label="Book Appointment" tabKey="book"     activeTab={activeTab} onClick={setActiveTab} />
-          <NavItem icon="📋" label="EMR Records"  tabKey="emr"          activeTab={activeTab} onClick={setActiveTab} />
-          <NavItem icon="📝" label="Create EMR"   tabKey="create-emr"   activeTab={activeTab} onClick={setActiveTab} />
-          <NavItem icon="🏥" label="Schedules"    tabKey="schedules"    activeTab={activeTab} onClick={setActiveTab} />
-          <NavItem icon="👥" label="Patients"     tabKey="patients"     activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="➕" label="Book Appointment" tabKey="book" activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="📋" label="EMR Records" tabKey="emr" activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="📝" label="Create EMR" tabKey="create-emr" activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="🏥" label="Schedules" tabKey="schedules" activeTab={activeTab} onClick={setActiveTab} />
+          <NavItem icon="👥" label="Patients" tabKey="patients" activeTab={activeTab} onClick={setActiveTab} />
         </nav>
 
         <div className="staff-sidebar-footer">
@@ -408,11 +412,11 @@ export default function StaffDashboard() {
         {activeTab === 'overview' && (
           <div className="staff-tab-content animate-fade-in">
             <div className="staff-stats-grid">
-              <StatCard icon="📅" label="Total Appointments" value={appointments.length}   color="#0ea5e9" sub={`${scheduledCount} upcoming`} />
-              <StatCard icon="✅" label="Completed Today"    value={completedCount}         color="#10b981" sub="appointments done" />
-              <StatCard icon="🏥" label="Available Slots"   value={availableSlots}          color="#6366f1" sub="across all doctors" />
-              <StatCard icon="📋" label="EMR Records"        value={emrRecords.length}       color="#f59e0b" sub="in the system" />
-              <StatCard icon="👥" label="Registered Patients" value={patients.length}        color="#ec4899" sub="active patients" />
+              <StatCard icon="📅" label="Total Appointments" value={appointments.length} color="#0ea5e9" sub={`${scheduledCount} upcoming`} />
+              <StatCard icon="✅" label="Completed Today" value={completedCount} color="#10b981" sub="appointments done" />
+              <StatCard icon="🏥" label="Available Slots" value={availableSlots} color="#6366f1" sub="across all doctors" />
+              <StatCard icon="📋" label="EMR Records" value={emrRecords.length} color="#f59e0b" sub="in the system" />
+              <StatCard icon="👥" label="Registered Patients" value={patients.length} color="#ec4899" sub="active patients" />
             </div>
 
             {/* Quick actions */}
@@ -750,18 +754,33 @@ export default function StaffDashboard() {
                       </div>
                       <span className="staff-badge">EMR</span>
                     </div>
-                    <div className="staff-emr-doctor">👨‍⚕️ {record.doctorName || '—'}</div>
-                    <div className="staff-emr-section">
-                      <div className="staff-emr-field-label">Diagnosis</div>
-                      <div className="staff-emr-field-value">{record.diagnosis || '—'}</div>
+                    <div className="staff-emr-doctor">👨‍⚕️ {record.attendingDoctor || '—'}</div>
+
+                    <div className="staff-emr-info-chips">
+                      {record.gender && <span className="staff-info-chip">🚻 {record.gender}</span>}
+                      {record.bloodGroup && <span className="staff-info-chip">🩸 {record.bloodGroup}</span>}
+                      {record.status && <span className="staff-info-chip" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>📌 {record.status}</span>}
                     </div>
-                    <div className="staff-emr-section">
-                      <div className="staff-emr-field-label">Treatment Plan</div>
-                      <div className="staff-emr-field-value">{record.treatmentPlan || record.treatment || '—'}</div>
+
+                    <div className="staff-emr-grid-details">
+                      <div className="staff-emr-section">
+                        <div className="staff-emr-field-label">Diagnosis</div>
+                        <div className="staff-emr-field-value" style={{ fontWeight: 600, color: 'var(--text-main)' }}>{record.diagnosis || '—'}</div>
+                      </div>
+                      <div className="staff-emr-section">
+                        <div className="staff-emr-field-label">Allergies</div>
+                        <div className="staff-emr-field-value" style={{ color: record.allergies ? '#ef4444' : 'inherit' }}>{record.allergies || 'None reported'}</div>
+                      </div>
                     </div>
-                    {record.notes && (
-                      <div className="staff-emr-notes">
-                        <span>📝</span> {record.notes}
+
+                    <div className="staff-emr-section" style={{ marginTop: '0.5rem' }}>
+                      <div className="staff-emr-field-label">Notes & Treatment Plan</div>
+                      <div className="staff-emr-field-value" style={{ whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{record.notes || '—'}</div>
+                    </div>
+
+                    {record.nextVisitFollowUpDate && (
+                      <div className="staff-emr-followup">
+                        <span>📅 Next Follow-up:</span> {new Date(record.nextVisitFollowUpDate).toLocaleDateString()}
                       </div>
                     )}
                   </div>
@@ -788,8 +807,8 @@ export default function StaffDashboard() {
                       value={emrForm.patientUsername}
                       onChange={e => {
                         const p = patients.find(pat => pat.username === e.target.value);
-                        setEmrForm(prev => ({ 
-                          ...prev, 
+                        setEmrForm(prev => ({
+                          ...prev,
                           patientUsername: e.target.value,
                           patientFullName: p ? (p.fullName || p.username) : ''
                         }));
@@ -1032,13 +1051,13 @@ export default function StaffDashboard() {
                             </button>
                             <button
                               className="staff-soft-btn"
-                              onClick={() => { 
-                                setEmrForm(prev => ({ 
-                                  ...prev, 
+                              onClick={() => {
+                                setEmrForm(prev => ({
+                                  ...prev,
                                   patientUsername: p.username,
-                                  patientFullName: p.fullName || p.username 
-                                })); 
-                                setActiveTab('create-emr'); 
+                                  patientFullName: p.fullName || p.username
+                                }));
+                                setActiveTab('create-emr');
                               }}
                               id={`create-emr-for-${p.username}`}
                             >

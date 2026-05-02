@@ -43,6 +43,9 @@ public class MedicalRecordDTO {
     @Pattern(regexp = "^(Active|Follow-Up|Discharged|Critical|)$", message = "Invalid status")
     private String status;
 
+    private String diagnosis;
+    private String notes;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

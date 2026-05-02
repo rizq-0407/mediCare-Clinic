@@ -20,12 +20,19 @@ export default function PatientBilling() {
     const [clientSecret, setClientSecret] = useState('');
 
     useEffect(() => {
-        if (!patientId) navigate('/patient');
-        else fetchInvoices();
+        if (!sessionStorage.getItem("token")) {
+            navigate('/login');
+        } else if (!patientId) {
+            navigate('/patient');
+        } else {
+            fetchInvoices();
+        }
     }, [patientId, navigate]);
 
     const fetchInvoices = () => {
-        fetch(`http://localhost:8080/api/billing/patient/${patientId}`)
+        fetch(`http://localhost:8080/api/billing/patient/${patientId}`, {
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem("token")}` }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('Network response was not ok');
                 return res.json();
@@ -40,7 +47,10 @@ export default function PatientBilling() {
     const handleOpenStripe = (inv) => {
         fetch('http://localhost:8080/api/billing/create-payment-intent', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${sessionStorage.getItem("token")}`
+            },
             body: JSON.stringify({ amount: inv.totalAmount })
         })
             .then(res => res.json())
@@ -51,7 +61,10 @@ export default function PatientBilling() {
     };
 
     const handlePaymentSuccess = (invoiceId, method) => {
-        fetch(`http://localhost:8080/api/billing/${invoiceId}/pay?method=${method}`, { method: 'PUT' })
+        fetch(`http://localhost:8080/api/billing/${invoiceId}/pay?method=${method}`, { 
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem("token")}` }
+        })
             .then(res => {
                 if(res.ok) {
                     setPatientStripe(null);

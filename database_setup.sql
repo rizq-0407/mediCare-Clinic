@@ -119,6 +119,8 @@ CREATE TABLE MedicalRecords (
     VisitDate            DATE NOT NULL,
     NextVisitFollowUpDate DATE,
     Status               VARCHAR(50) DEFAULT 'Active',
+    diagnosis            TEXT,
+    notes                TEXT,
     CreatedAt            DATETIME DEFAULT CURRENT_TIMESTAMP,
     UpdatedAt            DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
@@ -203,9 +205,11 @@ CREATE TABLE Tickets (
 CREATE TABLE Feedback (
     id               BIGINT AUTO_INCREMENT PRIMARY KEY,
     feedbackId       VARCHAR(20) UNIQUE NOT NULL,
-    patientId        VARCHAR(20) NOT NULL,
+    patientName      VARCHAR(100),
     rating           INT CHECK (rating BETWEEN 1 AND 5),
     comments         LONGTEXT,
+    experienceDate   DATE,
+    clinicService    VARCHAR(100),
     isPublic         BOOLEAN DEFAULT FALSE,
     adminReply       LONGTEXT,
     repliedBy        VARCHAR(100),
@@ -255,9 +259,9 @@ INSERT INTO Appointments (PatientName, PatientId, DoctorName, Specialty, Appoint
 ('Jane Smith', 'PAT002', 'Dr. James Wilson', 'Cardiology', '2026-06-12 14:15:00', 'Routine checkup',                  'Scheduled');
 
 -- Seeding Medical Records (EMR)
-INSERT INTO MedicalRecords (PatientFullName, PatientUsername, DateOfBirth, Gender, BloodGroup, Allergies, AttendingDoctor, VisitDate, Status) VALUES
-('John Doe',   'johndoe', '1985-05-15', 'Male', 'O+', 'Pollen, Dust', 'Dr. James Wilson', '2026-04-01', 'Active'),
-('Jane Smith', 'janesmith','1992-10-22', 'Female','A-', 'None',         'Dr. James Wilson', '2026-04-05', 'Active');
+INSERT INTO MedicalRecords (PatientFullName, PatientUsername, DateOfBirth, Gender, BloodGroup, Allergies, AttendingDoctor, VisitDate, Status, diagnosis, notes) VALUES
+('John Doe',   'johndoe', '1985-05-15', 'Male', 'O+', 'Pollen, Dust', 'Dr. James Wilson', '2026-04-01', 'Active', 'Hypertension', 'Regular monitoring, low salt diet.'),
+('Jane Smith', 'janesmith','1992-10-22', 'Female','A-', 'None',         'Dr. James Wilson', '2026-04-05', 'Active', 'Seasonal Allergies', 'Antihistamines prescribed.');
 
 -- Seeding Prescriptions
 INSERT INTO Prescriptions (PrescriptionID, PatientID, DoctorID, Notes, Status) VALUES

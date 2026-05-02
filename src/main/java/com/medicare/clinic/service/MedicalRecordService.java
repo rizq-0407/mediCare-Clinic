@@ -73,6 +73,8 @@ public class MedicalRecordService {
         existing.setVisitDate(dto.getVisitDate());
         existing.setNextVisitFollowUpDate(dto.getNextVisitFollowUpDate());
         existing.setStatus(dto.getStatus());
+        existing.setDiagnosis(dto.getDiagnosis() != null ? dto.getDiagnosis().trim() : null);
+        existing.setNotes(dto.getNotes() != null ? dto.getNotes().trim() : null);
 
         MedicalRecord saved = repository.save(existing);
         return toDTO(saved);
@@ -117,6 +119,8 @@ public class MedicalRecordService {
         dto.setVisitDate(entity.getVisitDate());
         dto.setNextVisitFollowUpDate(entity.getNextVisitFollowUpDate());
         dto.setStatus(entity.getStatus());
+        dto.setDiagnosis(entity.getDiagnosis());
+        dto.setNotes(entity.getNotes());
         dto.setCreatedAt(entity.getCreatedAt());
         dto.setUpdatedAt(entity.getUpdatedAt());
         return dto;
@@ -134,6 +138,8 @@ public class MedicalRecordService {
         entity.setVisitDate(dto.getVisitDate());
         entity.setNextVisitFollowUpDate(dto.getNextVisitFollowUpDate());
         entity.setStatus(dto.getStatus() != null && !dto.getStatus().isBlank() ? dto.getStatus() : "Active");
+        entity.setDiagnosis(dto.getDiagnosis() != null ? dto.getDiagnosis().trim() : null);
+        entity.setNotes(dto.getNotes() != null ? dto.getNotes().trim() : null);
         return entity;
     }
 }

@@ -49,6 +49,12 @@ public class MedicalRecord {
     @Column(name = "Status", length = 50)
     private String status;
 
+    @Column(name = "diagnosis", columnDefinition = "TEXT")
+    private String diagnosis;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
+
     @Column(name = "CreatedAt", updatable = false)
     private LocalDateTime createdAt;
 

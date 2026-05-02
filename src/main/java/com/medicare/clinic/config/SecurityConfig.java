@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/agent/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/schedules/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/schedules/search").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/schedules/book/**").hasAnyRole("PATIENT", "ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/schedules/*/request").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/schedules/*/dismiss-response").hasRole("DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/schedules/*/approve").hasRole("ADMIN")
@@ -67,9 +68,11 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/users/doctors")
                         .hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PHARMACY")
 
-                        // ── STAFF / ADMIN / DOCTOR / PATIENT — appointment management ──────────────────
+                        // ── STAFF / ADMIN / DOCTOR / PATIENT — appointment management
+                        // ──────────────────
                         .requestMatchers(HttpMethod.GET, "/api/appointments").hasAnyRole("ADMIN", "STAFF", "DOCTOR")
-                        .requestMatchers("/api/appointments/patient/**").hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PATIENT")
+                        .requestMatchers("/api/appointments/patient/**")
+                        .hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.PATCH, "/api/appointments/**").hasAnyRole("ADMIN", "STAFF")
                         .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasAnyRole("ADMIN", "STAFF")
 
@@ -81,7 +84,8 @@ public class SecurityConfig {
                         // ────────
                         .requestMatchers("/api/prescriptions/**").hasAnyRole("ADMIN", "DOCTOR", "PHARMACY", "PATIENT")
 
-                        // ── EMR — staff, doctors, admins, and patients (own records) ────────────────────────────────
+                        // ── EMR — staff, doctors, admins, and patients (own records)
+                        // ────────────────────────────────
                         .requestMatchers("/api/emr/**").hasAnyRole("ADMIN", "STAFF", "DOCTOR", "PATIENT")
 
                         // ── ALL OTHER endpoints require a valid JWT ───────────────────────────

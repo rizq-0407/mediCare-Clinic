@@ -10,8 +10,18 @@ export default function AdminBilling() {
     const [adminCheckout, setAdminCheckout] = useState(null);
     const [amountTendered, setAmountTendered] = useState('');
 
+    const getAuthHeaders = () => {
+        const token = sessionStorage.getItem("token");
+        return {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        };
+    };
+
     const fetchInvoices = () => {
-        fetch('http://localhost:8080/api/billing/all')
+        fetch('http://localhost:8080/api/billing/all', {
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem("token")}` }
+        })
             .then(res => {
                 if (!res.ok) throw new Error('Network response was not ok');
                 return res.json();
@@ -23,13 +33,19 @@ export default function AdminBilling() {
             });
     };
 
-    useEffect(() => { fetchInvoices(); }, []);
+    useEffect(() => { 
+        if (!sessionStorage.getItem("token")) {
+            navigate('/login');
+        } else {
+            fetchInvoices(); 
+        }
+    }, [navigate]);
 
     const handleCreateInvoice = (e) => {
         e.preventDefault();
         fetch('http://localhost:8080/api/billing', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: getAuthHeaders(),
             body: JSON.stringify({ ...formData, totalAmount: parseFloat(formData.totalAmount), status: 'UNPAID' })
         })
             .then(res => {
@@ -43,7 +59,10 @@ export default function AdminBilling() {
     };
 
     const handleProcessPayment = (invoiceId, method) => {
-        fetch(`http://localhost:8080/api/billing/${invoiceId}/pay?method=${method}`, { method: 'PUT' })
+        fetch(`http://localhost:8080/api/billing/${invoiceId}/pay?method=${method}`, { 
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${sessionStorage.getItem("token")}` }
+        })
             .then(res => {
                 if(res.ok) {
                     setAdminCheckout(null);
@@ -55,7 +74,10 @@ export default function AdminBilling() {
 
     const handleDelete = (invoiceId) => {
         if(window.confirm(`Delete invoice ${invoiceId}?`)) {
-            fetch(`http://localhost:8080/api/billing/${invoiceId}`, { method: 'DELETE' })
+            fetch(`http://localhost:8080/api/billing/${invoiceId}`, { 
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${sessionStorage.getItem("token")}` }
+            })
                 .then(res => { if(res.ok) fetchInvoices(); });
         }
     };

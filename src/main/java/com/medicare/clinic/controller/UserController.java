@@ -3,6 +3,10 @@ package com.medicare.clinic.controller;
 import com.medicare.clinic.model.Role;
 import com.medicare.clinic.model.User;
 import com.medicare.clinic.repository.UserRepository;
+import com.medicare.clinic.dto.ProfileUpdateRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,9 +19,11 @@ import java.util.stream.Collectors;
 public class UserController {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserController(UserRepository userRepository) {
+    public UserController(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     /**
@@ -61,7 +67,7 @@ public class UserController {
      * Updates an existing user's details (Name, Email, Contact, Role).
      */
     @PutMapping("/{id}")
-    public org.springframework.http.ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userData) {
+    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User userData) {
         User user = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         
         user.setFullName(userData.getFullName());
@@ -69,6 +75,31 @@ public class UserController {
         user.setContactNumber(userData.getContactNumber());
         user.setRole(userData.getRole());
 
-        return org.springframework.http.ResponseEntity.ok(userRepository.save(user));
+        return ResponseEntity.ok(userRepository.save(user));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<User> getCurrentUser(Authentication authentication) {
+        if (authentication == null) return ResponseEntity.status(401).build();
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return ResponseEntity.ok(user);
+    }
+
+    @PutMapping("/profile")
+    public ResponseEntity<User> updateProfile(Authentication authentication, @RequestBody ProfileUpdateRequest request) {
+        if (authentication == null) return ResponseEntity.status(401).build();
+        User user = userRepository.findByUsername(authentication.getName())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (request.getFullName() != null) user.setFullName(request.getFullName());
+        if (request.getEmail() != null) user.setEmail(request.getEmail());
+        if (request.getContactNumber() != null) user.setContactNumber(request.getContactNumber());
+        
+        if (request.getPassword() != null && !request.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+        }
+
+        return ResponseEntity.ok(userRepository.save(user));
     }
 }

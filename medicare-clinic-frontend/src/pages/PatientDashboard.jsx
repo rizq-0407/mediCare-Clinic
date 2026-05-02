@@ -47,16 +47,24 @@ export default function PatientDashboard() {
     }, [location.state?.refreshAppointments]);
 
     const [userProfile, setUserProfile] = useState({
-        name: storedFullName,
+        fullName: storedFullName,
         id: storedUserId,
         username: storedUsername,
         role: storedRole,
-        email: 'Loading...',
-        phone: 'Loading...',
-        address: 'Loading...',
-        bloodGroup: 'O+',
-        allergies: 'None'
+        email: '',
+        contactNumber: '',
+        bloodGroup: '',
+        allergies: ''
     });
+
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [profileForm, setProfileForm] = useState({
+        fullName: '',
+        email: '',
+        contactNumber: '',
+        password: ''
+    });
+    const [profileSaving, setProfileSaving] = useState(false);
 
     const patientUserId = storedUserId;
 
@@ -65,7 +73,42 @@ export default function PatientDashboard() {
         fetchSchedules();
         fetchEmrRecords();
         fetchAppointments();
+        fetchUserProfile();
     }, []);
+
+    const fetchUserProfile = async () => {
+        try {
+            const res = await API.get('/users/me');
+            setUserProfile(res.data);
+            setProfileForm({
+                fullName: res.data.fullName || '',
+                email: res.data.email || '',
+                contactNumber: res.data.contactNumber || '',
+                password: ''
+            });
+        } catch (err) {
+            console.error('Failed to fetch user profile:', err);
+        }
+    };
+
+    const handleUpdateProfile = async (e) => {
+        e.preventDefault();
+        try {
+            setProfileSaving(true);
+            const res = await API.put('/users/profile', profileForm);
+            setUserProfile(res.data);
+            setIsEditingProfile(false);
+            showToast('✅ Profile updated successfully!');
+            // Update session storage if name changed
+            if (res.data.fullName) {
+                sessionStorage.setItem('fullName', res.data.fullName);
+            }
+        } catch (err) {
+            showToast('❌ Update failed: ' + (err.response?.data || err.message), 'error');
+        } finally {
+            setProfileSaving(false);
+        }
+    };
 
     const fetchSchedules = async () => {
         try {
@@ -251,7 +294,7 @@ export default function PatientDashboard() {
                 <header className="header-row">
                     <div>
                         <h1>Patient Portal</h1>
-                        <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {userProfile.name}</p>
+                        <p style={{ color: 'var(--text-secondary)' }}>Welcome back, {userProfile.fullName || userProfile.username}</p>
                     </div>
                     <div className="soft-card" style={{ padding: '0.6rem 1.2rem', display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
                         {userProfile.id && <div className="badge badge-info">ID: {userProfile.id}</div>}
@@ -525,6 +568,14 @@ export default function PatientDashboard() {
                                             <div><strong>Doctor:</strong> {record.attendingDoctor}</div>
                                             <div><strong>Blood Group:</strong> {record.bloodGroup}</div>
                                             <div style={{ gridColumn: 'span 2' }}><strong>Allergies:</strong> {record.allergies || 'None'}</div>
+                                            <div style={{ gridColumn: 'span 2', marginTop: '0.5rem', padding: '0.8rem', background: 'rgba(67,97,238,0.05)', borderRadius: '10px' }}>
+                                                <div style={{ fontWeight: '700', color: 'var(--primary)', marginBottom: '0.3rem' }}>Diagnosis</div>
+                                                <div>{record.diagnosis || 'No diagnosis recorded'}</div>
+                                            </div>
+                                            <div style={{ gridColumn: 'span 2', marginTop: '0.5rem', padding: '0.8rem', background: 'rgba(0,0,0,0.02)', borderRadius: '10px' }}>
+                                                <div style={{ fontWeight: '700', color: 'var(--text-main)', marginBottom: '0.3rem' }}>Treatment Plan & Notes</div>
+                                                <div style={{ whiteSpace: 'pre-wrap' }}>{record.notes || 'No treatment plan recorded'}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -537,16 +588,88 @@ export default function PatientDashboard() {
                 {activeTab === 'profile' && (
                     <div className="animate-fade-in soft-card" style={{ padding: '2.5rem' }}>
                         <div style={{ display: 'flex', gap: '2rem', alignItems: 'center', marginBottom: '2rem' }}>
-                            <div className="stat-icon" style={{ width: '80px', height: '80px', fontSize: '2.5rem' }}>{userProfile.name.charAt(0)}</div>
-                            <div>
-                                <h2>{userProfile.name}</h2>
+                            <div className="stat-icon" style={{ width: '80px', height: '80px', fontSize: '2.5rem' }}>{(userProfile.fullName || userProfile.username || 'P').charAt(0)}</div>
+                            <div style={{ flex: 1 }}>
+                                <h2>{userProfile.fullName || userProfile.username}</h2>
                                 <p style={{ color: 'var(--text-secondary)' }}>@{userProfile.username}</p>
                             </div>
+                            {!isEditingProfile && (
+                                <button className="btn btn-primary" onClick={() => setIsEditingProfile(true)}>
+                                    ✏️ Edit Profile
+                                </button>
+                            )}
                         </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
-                            <div><strong>User ID:</strong> {userProfile.id}</div>
-                            <div><strong>Role:</strong> {userProfile.role}</div>
-                        </div>
+
+                        {isEditingProfile ? (
+                            <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', maxWidth: '500px' }}>
+                                <div className="form-group">
+                                    <label className="label">Full Name</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        value={profileForm.fullName}
+                                        onChange={e => setProfileForm({...profileForm, fullName: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="label">Email Address</label>
+                                    <input 
+                                        type="email" 
+                                        className="form-input" 
+                                        value={profileForm.email}
+                                        onChange={e => setProfileForm({...profileForm, email: e.target.value})}
+                                        required
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="label">Contact Number</label>
+                                    <input 
+                                        type="text" 
+                                        className="form-input" 
+                                        value={profileForm.contactNumber}
+                                        onChange={e => setProfileForm({...profileForm, contactNumber: e.target.value})}
+                                    />
+                                </div>
+                                <div className="form-group">
+                                    <label className="label">New Password (leave blank to keep current)</label>
+                                    <input 
+                                        type="password" 
+                                        className="form-input" 
+                                        placeholder="••••••••"
+                                        value={profileForm.password}
+                                        onChange={e => setProfileForm({...profileForm, password: e.target.value})}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                                    <button type="submit" className="btn btn-primary" disabled={profileSaving}>
+                                        {profileSaving ? 'Saving...' : 'Save Changes'}
+                                    </button>
+                                    <button type="button" className="btn btn-soft" onClick={() => setIsEditingProfile(false)}>
+                                        Cancel
+                                    </button>
+                                </div>
+                            </form>
+                        ) : (
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+                                <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                                    <h4 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Contact Information</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>FULL NAME</span><br/>{userProfile.fullName || '—'}</div>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>EMAIL</span><br/>{userProfile.email || '—'}</div>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>PHONE</span><br/>{userProfile.contactNumber || '—'}</div>
+                                    </div>
+                                </div>
+                                <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                                    <h4 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Account Details</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem' }}>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>USERNAME</span><br/>@{userProfile.username}</div>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>USER ID</span><br/>{userProfile.userId || userProfile.id || '—'}</div>
+                                        <div><span style={{ color: 'var(--text-secondary)', fontSize: '0.8rem' }}>ROLE</span><br/><span className="badge badge-info">{userProfile.role}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
 
